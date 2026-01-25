@@ -28,16 +28,20 @@ class LoginScreenTest {
             VaultenTheme {
                 LoginScreen(
                     uiState = LoginUiState(),
+                    onEmailChange = {},
                     onPasswordChange = {},
                     onUnlockClick = {},
-                    onBiometricToggle = {}
+                    onBiometricToggle = {},
+                    onSignupClick = {}
                 )
             }
         }
 
         composeRule.onNodeWithTag(LoginTestTags.Title).assertIsDisplayed()
+        composeRule.onNodeWithTag(LoginTestTags.EmailField).assertIsDisplayed()
         composeRule.onNodeWithTag(LoginTestTags.PasswordField).assertIsDisplayed()
         composeRule.onNodeWithTag(LoginTestTags.UnlockButton).assertIsDisplayed().assertIsEnabled()
+        composeRule.onNodeWithTag(LoginTestTags.SignupButton).assertIsDisplayed().assertIsEnabled()
         composeRule.onNodeWithTag(LoginTestTags.BiometricToggle).assertIsDisplayed()
         composeRule.onNodeWithTag(LoginTestTags.ErrorText).assertDoesNotExist()
         composeRule.onNodeWithTag(LoginTestTags.Loading).assertDoesNotExist()
@@ -52,9 +56,11 @@ class LoginScreenTest {
             VaultenTheme {
                 LoginScreen(
                     uiState = LoginUiState(errorMessage = errorMessage),
+                    onEmailChange = {},
                     onPasswordChange = {},
                     onUnlockClick = {},
-                    onBiometricToggle = {}
+                    onBiometricToggle = {},
+                    onSignupClick = {}
                 )
             }
         }
@@ -70,9 +76,11 @@ class LoginScreenTest {
             VaultenTheme {
                 LoginScreen(
                     uiState = LoginUiState(isLoading = true),
+                    onEmailChange = {},
                     onPasswordChange = {},
                     onUnlockClick = {},
-                    onBiometricToggle = {}
+                    onBiometricToggle = {},
+                    onSignupClick = {}
                 )
             }
         }
@@ -88,9 +96,11 @@ class LoginScreenTest {
             VaultenTheme {
                 LoginScreen(
                     uiState = LoginUiState(isLockedOut = true, remainingAttempts = 0),
+                    onEmailChange = {},
                     onPasswordChange = {},
                     onUnlockClick = {},
-                    onBiometricToggle = {}
+                    onBiometricToggle = {},
+                    onSignupClick = {}
                 )
             }
         }

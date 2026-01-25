@@ -1,4 +1,4 @@
-package com.wilove.vaulten.ui.login
+package com.wilove.vaulten.ui.signup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,7 +12,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,18 +23,19 @@ import androidx.compose.ui.unit.dp
 import com.wilove.vaulten.ui.theme.VaultenTheme
 
 /**
- * Stateless Login UI. Renders purely from [LoginUiState] and forwards user events
+ * Stateless Signup UI. Renders purely from [SignupUiState] and forwards user events
  * via the provided callbacks.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
-    uiState: LoginUiState,
+fun SignupScreen(
+    uiState: SignupUiState,
+    onFullNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onUnlockClick: () -> Unit,
-    onBiometricToggle: (Boolean) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
     onSignupClick: () -> Unit,
+    onLoginClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -45,16 +45,28 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Top
     ) {
         Text(
-            text = "Unlock Vault",
+            text = "Create Vault",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.testTag(LoginTestTags.Title)
+            modifier = Modifier.testTag(SignupTestTags.Title)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Enter your master password to continue.",
+            text = "Sign up to start protecting your credentials.",
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedTextField(
+            value = uiState.fullName,
+            onValueChange = onFullNameChange,
+            label = { Text(text = "Full name") },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(SignupTestTags.FullNameField)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = uiState.email,
@@ -63,7 +75,7 @@ fun LoginScreen(
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(LoginTestTags.EmailField)
+                .testTag(SignupTestTags.EmailField)
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -76,40 +88,20 @@ fun LoginScreen(
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(LoginTestTags.PasswordField)
+                .testTag(SignupTestTags.PasswordField)
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Biometric unlock",
-                style = MaterialTheme.typography.titleSmall
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Switch(
-                checked = uiState.biometricEnabled,
-                onCheckedChange = onBiometricToggle,
-                modifier = Modifier.testTag(LoginTestTags.BiometricToggle)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (uiState.isLockedOut) {
-            Text(
-                text = "Too many attempts. Please wait before trying again.",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(LoginTestTags.LockoutText)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        Text(
-            text = "Attempts remaining: ${uiState.remainingAttempts}/${uiState.maxAttempts}",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.testTag(LoginTestTags.AttemptsText)
+        OutlinedTextField(
+            value = uiState.confirmPassword,
+            onValueChange = onConfirmPasswordChange,
+            label = { Text(text = "Confirm password") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(SignupTestTags.ConfirmPasswordField)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -119,37 +111,36 @@ fun LoginScreen(
                 text = uiState.errorMessage,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(LoginTestTags.ErrorText)
+                modifier = Modifier.testTag(SignupTestTags.ErrorText)
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // Disable the primary action when locked or loading to reflect security constraints.
-        val unlockEnabled = !uiState.isLockedOut && !uiState.isLoading
+        val signupEnabled = !uiState.isLoading
 
         Button(
-            onClick = onUnlockClick,
-            enabled = unlockEnabled,
+            onClick = onSignupClick,
+            enabled = signupEnabled,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(LoginTestTags.UnlockButton)
+                .testTag(SignupTestTags.SignupButton)
         ) {
-            Text(text = if (uiState.isLoading) "Unlocking..." else "Unlock")
+            Text(text = if (uiState.isLoading) "Creating..." else "Create account")
         }
 
         TextButton(
-            onClick = onSignupClick,
+            onClick = onLoginClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(LoginTestTags.SignupButton)
+                .testTag(SignupTestTags.LoginButton)
         ) {
-            Text(text = "Create an account")
+            Text(text = "Already have an account? Sign in")
         }
 
         if (uiState.isLoading) {
             Spacer(modifier = Modifier.height(12.dp))
             CircularProgressIndicator(
-                modifier = Modifier.testTag(LoginTestTags.Loading)
+                modifier = Modifier.testTag(SignupTestTags.Loading)
             )
         }
     }
@@ -157,15 +148,16 @@ fun LoginScreen(
 
 @Preview(showBackground = true)
 @Composable
-private fun LoginScreenPreview() {
+private fun SignupScreenPreview() {
     VaultenTheme {
-        LoginScreen(
-            uiState = LoginUiState(),
+        SignupScreen(
+            uiState = SignupUiState(),
+            onFullNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
-            onUnlockClick = {},
-            onBiometricToggle = {},
-            onSignupClick = {}
+            onConfirmPasswordChange = {},
+            onSignupClick = {},
+            onLoginClick = {}
         )
     }
 }

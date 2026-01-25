@@ -6,6 +6,7 @@ package com.wilove.vaulten.ui.navigation
  */
 object VaultenDestinations {
     const val LOGIN = "login"
+    const val SIGNUP = "signup"
     const val DASHBOARD = "dashboard"
     const val CREDENTIALS_LIST = "credentials_list"
     const val CREDENTIAL_DETAIL = "credential_detail/{credentialId}"

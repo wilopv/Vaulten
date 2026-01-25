@@ -14,6 +14,8 @@ import com.wilove.vaulten.ui.dashboard.DashboardScreen
 import com.wilove.vaulten.ui.dashboard.DashboardViewModel
 import com.wilove.vaulten.ui.login.LoginScreen
 import com.wilove.vaulten.ui.login.LoginViewModel
+import com.wilove.vaulten.ui.signup.SignupScreen
+import com.wilove.vaulten.ui.signup.SignupViewModel
 
 
 /**
@@ -58,7 +60,36 @@ fun VaultenNavGraph(
                         }
                     }
                 },
-                onBiometricToggle = viewModel::onBiometricToggle
+                onBiometricToggle = viewModel::onBiometricToggle,
+                onSignupClick = {
+                    navController.navigate(VaultenDestinations.SIGNUP)
+                }
+            )
+        }
+
+        // Signup Screen
+        composable(VaultenDestinations.SIGNUP) {
+            val viewModel: SignupViewModel = viewModel()
+            val uiState by viewModel.uiState.collectAsState()
+
+            SignupScreen(
+                uiState = uiState,
+                onFullNameChange = viewModel::onFullNameChange,
+                onEmailChange = viewModel::onEmailChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+                onSignupClick = {
+                    if (viewModel.onSignupClick()) {
+                        // Navigate to dashboard on successful signup
+                        // In real app, this would wait for actual account creation
+                        navController.navigate(VaultenDestinations.DASHBOARD) {
+                            popUpTo(VaultenDestinations.LOGIN) { inclusive = true }
+                        }
+                    }
+                },
+                onLoginClick = {
+                    navController.popBackStack()
+                }
             )
         }
 
