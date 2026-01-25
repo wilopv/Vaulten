@@ -1,4 +1,4 @@
-package com.example.vaulten.ui.theme
+package com.wilove.vaulten.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

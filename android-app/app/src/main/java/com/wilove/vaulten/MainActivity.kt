@@ -1,4 +1,4 @@
-package com.example.vaulten
+package com.wilove.vaulten
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,41 +7,29 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.vaulten.ui.theme.VaultenTheme
+import androidx.navigation.compose.rememberNavController
+import com.wilove.vaulten.ui.navigation.VaultenNavGraph
+import com.wilove.vaulten.ui.theme.VaultenTheme
 
+/**
+ * Main activity and entry point for the Vaulten password manager app.
+ * Sets up the navigation graph and theme.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             VaultenTheme {
+                val navController = rememberNavController()
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    VaultenNavGraph(
+                        navController = navController,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    VaultenTheme {
-        Greeting("Android")
     }
 }
