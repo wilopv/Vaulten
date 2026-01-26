@@ -9,7 +9,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.wilove.vaulten.data.repository.FakeVaultRepository
+import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
+import com.wilove.vaulten.ui.credentials.CredentialsListScreen
+import com.wilove.vaulten.ui.credentials.CredentialsListViewModel
 import com.wilove.vaulten.ui.dashboard.DashboardScreen
 import com.wilove.vaulten.ui.dashboard.DashboardViewModel
 import com.wilove.vaulten.ui.login.LoginScreen
@@ -36,6 +39,7 @@ fun VaultenNavGraph(
     // In a real app, these would be injected via Hilt or similar
     val repository = FakeVaultRepository()
     val getDashboardDataUseCase = GetDashboardDataUseCase(repository)
+    val getAllCredentialsUseCase = GetAllCredentialsUseCase(repository)
 
     NavHost(
         navController = navController,
@@ -108,12 +112,34 @@ fun VaultenNavGraph(
                 onAddCredentialClick = {
                     navController.navigate(VaultenDestinations.ADD_CREDENTIAL)
                 },
+                onViewAllClick = {
+                    navController.navigate(VaultenDestinations.CREDENTIALS_LIST)
+                },
+                onRefresh = viewModel::refresh
+            )
+        }
+
+        // Credentials List Screen
+        composable(VaultenDestinations.CREDENTIALS_LIST) {
+            val viewModel: CredentialsListViewModel = viewModel(
+                factory = CredentialsListViewModelFactory(getAllCredentialsUseCase)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            CredentialsListScreen(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onCredentialClick = { credentialId ->
+                    navController.navigate(VaultenDestinations.credentialDetail(credentialId))
+                },
+                onAddCredentialClick = {
+                    navController.navigate(VaultenDestinations.ADD_CREDENTIAL)
+                },
                 onRefresh = viewModel::refresh
             )
         }
 
         // TODO: Add other screen destinations as they are implemented
-        // - Credentials List
         // - Credential Detail
         // - Add/Edit Credential
         // - Password Generator

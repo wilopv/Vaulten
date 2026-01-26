@@ -42,6 +42,7 @@ fun DashboardScreen(
     uiState: DashboardUiState,
     onCredentialClick: (String) -> Unit,
     onAddCredentialClick: () -> Unit,
+    onViewAllClick: () -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -95,7 +96,8 @@ fun DashboardScreen(
                 DashboardContent(
                     dashboardData = uiState.dashboardData,
                     onCredentialClick = onCredentialClick,
-                    onAddCredentialClick = onAddCredentialClick
+                    onAddCredentialClick = onAddCredentialClick,
+                    onViewAllClick = onViewAllClick
                 )
             }
         }
@@ -109,7 +111,8 @@ fun DashboardScreen(
 private fun DashboardContent(
     dashboardData: DashboardData,
     onCredentialClick: (String) -> Unit,
-    onAddCredentialClick: () -> Unit
+    onAddCredentialClick: () -> Unit,
+    onViewAllClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -162,8 +165,13 @@ private fun DashboardContent(
                     text = "Recent Accesses",
                     style = MaterialTheme.typography.titleLarge
                 )
-                Button(onClick = onAddCredentialClick) {
-                    Text("Add")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.TextButton(onClick = onViewAllClick) {
+                        Text("View all")
+                    }
+                    Button(onClick = onAddCredentialClick) {
+                        Text("Add")
+                    }
                 }
             }
         }
@@ -278,6 +286,7 @@ private fun DashboardScreenPreview() {
             ),
             onCredentialClick = {},
             onAddCredentialClick = {},
+            onViewAllClick = {},
             onRefresh = {}
         )
     }
