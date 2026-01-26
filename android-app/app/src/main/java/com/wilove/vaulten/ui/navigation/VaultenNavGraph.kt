@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.wilove.vaulten.data.repository.FakeVaultRepository
 import com.wilove.vaulten.domain.usecase.CreateCredentialUseCase
+import com.wilove.vaulten.domain.usecase.GeneratePasswordUseCase
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
 import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
@@ -24,6 +25,8 @@ import com.wilove.vaulten.ui.dashboard.DashboardScreen
 import com.wilove.vaulten.ui.dashboard.DashboardViewModel
 import com.wilove.vaulten.ui.login.LoginScreen
 import com.wilove.vaulten.ui.login.LoginViewModel
+import com.wilove.vaulten.ui.passwordgenerator.PasswordGeneratorScreen
+import com.wilove.vaulten.ui.passwordgenerator.PasswordGeneratorViewModel
 import com.wilove.vaulten.ui.signup.SignupScreen
 import com.wilove.vaulten.ui.signup.SignupViewModel
 
@@ -50,6 +53,7 @@ fun VaultenNavGraph(
     val getCredentialByIdUseCase = GetCredentialByIdUseCase(repository)
     val createCredentialUseCase = CreateCredentialUseCase(repository)
     val updateCredentialUseCase = UpdateCredentialUseCase(repository)
+    val generatePasswordUseCase = GeneratePasswordUseCase()
 
     NavHost(
         navController = navController,
@@ -183,7 +187,7 @@ fun VaultenNavGraph(
         }
 
         // Add Credential Screen
-        composable(VaultenDestinations.ADD_CREDENTIAL) {
+        composable(VaultenDestinations.ADD_CREDENTIAL) { backStackEntry ->
             val viewModel: CreateEditCredentialViewModel = viewModel(
                 factory = CreateEditCredentialViewModelFactory(
                     createCredentialUseCase,
@@ -191,6 +195,20 @@ fun VaultenNavGraph(
                 )
             )
             val uiState by viewModel.uiState.collectAsState()
+
+            // Check if a password was generated and use it
+            val generatedPassword = backStackEntry
+                .savedStateHandle
+                .getStateFlow<String?>("generatedPassword", null)
+                .collectAsState()
+
+            androidx.compose.runtime.LaunchedEffect(generatedPassword.value) {
+                generatedPassword.value?.let { password ->
+                    viewModel.onPasswordChange(password)
+                    // Clear the saved state to avoid re-applying
+                    backStackEntry.savedStateHandle.set<String?>("generatedPassword", null)
+                }
+            }
 
             CreateEditCredentialScreen(
                 uiState = uiState,
@@ -201,6 +219,9 @@ fun VaultenNavGraph(
                 onSaveClick = viewModel::saveCredential,
                 onCancelClick = {
                     navController.popBackStack()
+                },
+                onGeneratePasswordClick = {
+                    navController.navigate(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL)
                 }
             )
 
@@ -225,9 +246,26 @@ fun VaultenNavGraph(
             )
             val uiState by viewModel.uiState.collectAsState()
 
-            // Load credential when screen is first shown
-            androidx.compose.runtime.LaunchedEffect(credentialId) {
+            // Load credential on first composition only
+            androidx.compose.runtime.LaunchedEffect(Unit) {
                 viewModel.loadCredentialForEditing(credentialId)
+            }
+
+            // Check if a password was generated and use it - this must run after loading
+            val generatedPassword = backStackEntry
+                .savedStateHandle
+                .getStateFlow<String?>("generatedPassword", null)
+                .collectAsState()
+
+            // Apply generated password with a small delay to ensure it runs after loading
+            androidx.compose.runtime.LaunchedEffect(generatedPassword.value) {
+                if (generatedPassword.value != null) {
+                    // Small delay to let the credential load first
+                    kotlinx.coroutines.delay(50)
+                    viewModel.onPasswordChange(generatedPassword.value!!)
+                    // Clear the saved state to avoid re-applying
+                    backStackEntry.savedStateHandle.set<String?>("generatedPassword", null)
+                }
             }
 
             CreateEditCredentialScreen(
@@ -239,6 +277,9 @@ fun VaultenNavGraph(
                 onSaveClick = viewModel::saveCredential,
                 onCancelClick = {
                     navController.popBackStack()
+                },
+                onGeneratePasswordClick = {
+                    navController.navigate(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL)
                 }
             )
 
@@ -251,8 +292,76 @@ fun VaultenNavGraph(
             }
         }
 
+        // Password Generator Screen (standalone)
+        composable(VaultenDestinations.PASSWORD_GENERATOR) {
+            val viewModel: PasswordGeneratorViewModel = viewModel(
+                factory = PasswordGeneratorViewModelFactory(generatePasswordUseCase)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            PasswordGeneratorScreen(
+                uiState = uiState,
+                onGenerateClick = viewModel::generatePassword,
+                onLengthChange = viewModel::setLength,
+                onUppercaseToggle = viewModel::toggleUppercase,
+                onLowercaseToggle = viewModel::toggleLowercase,
+                onNumbersToggle = viewModel::toggleNumbers,
+                onSymbolsToggle = viewModel::toggleSymbols,
+                onCopyClick = viewModel::markPasswordAsCopied,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                showUseButton = false
+            )
+
+            // Clear copied feedback after 2 seconds
+            if (uiState.copiedPassword) {
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(2000)
+                    viewModel.clearCopiedFeedback()
+                }
+            }
+        }
+
+        // Password Generator Screen (for credential form)
+        composable(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL) {
+            val viewModel: PasswordGeneratorViewModel = viewModel(
+                factory = PasswordGeneratorViewModelFactory(generatePasswordUseCase)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            PasswordGeneratorScreen(
+                uiState = uiState,
+                onGenerateClick = viewModel::generatePassword,
+                onLengthChange = viewModel::setLength,
+                onUppercaseToggle = viewModel::toggleUppercase,
+                onLowercaseToggle = viewModel::toggleLowercase,
+                onNumbersToggle = viewModel::toggleNumbers,
+                onSymbolsToggle = viewModel::toggleSymbols,
+                onCopyClick = viewModel::markPasswordAsCopied,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onUsePasswordClick = {
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        "generatedPassword",
+                        uiState.generatedPassword
+                    )
+                    navController.popBackStack()
+                },
+                showUseButton = true
+            )
+
+            // Clear copied feedback after 2 seconds
+            if (uiState.copiedPassword) {
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(2000)
+                    viewModel.clearCopiedFeedback()
+                }
+            }
+        }
+
         // TODO: Add other screen destinations as they are implemented
-        // - Password Generator
         // - Security Settings
     }
 }

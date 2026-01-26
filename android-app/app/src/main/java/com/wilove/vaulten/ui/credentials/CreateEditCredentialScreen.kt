@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +43,7 @@ fun CreateEditCredentialScreen(
     onUrlChange: (String) -> Unit,
     onSaveClick: () -> Unit,
     onCancelClick: () -> Unit,
+    onGeneratePasswordClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -148,19 +150,37 @@ fun CreateEditCredentialScreen(
                     )
 
                     // Password field
-                    OutlinedTextField(
-                        value = uiState.password,
-                        onValueChange = onPasswordChange,
-                        label = { Text("Password") },
-                        isError = uiState.passwordError != null,
-                        supportingText = if (uiState.passwordError != null) {
-                            { Text(uiState.passwordError) }
-                        } else null,
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag(CreateEditCredentialTestTags.PasswordField)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.password,
+                            onValueChange = onPasswordChange,
+                            label = { Text("Password") },
+                            isError = uiState.passwordError != null,
+                            supportingText = if (uiState.passwordError != null) {
+                                { Text(uiState.passwordError) }
+                            } else null,
+                            singleLine = true,
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag(CreateEditCredentialTestTags.PasswordField)
+                        )
+                        OutlinedButton(
+                            onClick = onGeneratePasswordClick,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .testTag(CreateEditCredentialTestTags.GeneratePasswordButton)
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Filled.Refresh,
+                                contentDescription = "Generate",
+                                modifier = Modifier.padding(end = 4.dp)
+                            )
+                            Text("Generate")
+                        }
+                    }
 
                     // URL field
                     OutlinedTextField(

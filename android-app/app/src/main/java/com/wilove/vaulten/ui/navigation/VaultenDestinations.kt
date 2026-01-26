@@ -13,6 +13,7 @@ object VaultenDestinations {
     const val ADD_CREDENTIAL = "add_credential"
     const val EDIT_CREDENTIAL = "edit_credential/{credentialId}"
     const val PASSWORD_GENERATOR = "password_generator"
+    const val PASSWORD_GENERATOR_FOR_CREDENTIAL = "password_generator_for_credential"
     const val SECURITY_SETTINGS = "security_settings"
 
     /**
