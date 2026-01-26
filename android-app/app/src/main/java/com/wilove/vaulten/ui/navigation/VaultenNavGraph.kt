@@ -9,9 +9,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.wilove.vaulten.data.repository.FakeVaultRepository
+import com.wilove.vaulten.domain.usecase.CreateCredentialUseCase
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
 import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
+import com.wilove.vaulten.domain.usecase.UpdateCredentialUseCase
+import com.wilove.vaulten.ui.credentials.CreateEditCredentialScreen
+import com.wilove.vaulten.ui.credentials.CreateEditCredentialViewModel
 import com.wilove.vaulten.ui.credentials.CredentialDetailScreen
 import com.wilove.vaulten.ui.credentials.CredentialDetailViewModel
 import com.wilove.vaulten.ui.credentials.CredentialsListScreen
@@ -44,6 +48,8 @@ fun VaultenNavGraph(
     val getDashboardDataUseCase = GetDashboardDataUseCase(repository)
     val getAllCredentialsUseCase = GetAllCredentialsUseCase(repository)
     val getCredentialByIdUseCase = GetCredentialByIdUseCase(repository)
+    val createCredentialUseCase = CreateCredentialUseCase(repository)
+    val updateCredentialUseCase = UpdateCredentialUseCase(repository)
 
     NavHost(
         navController = navController,
@@ -176,9 +182,76 @@ fun VaultenNavGraph(
             )
         }
 
-        // TODO: Add other screen destinations as they are implementedeen destinations as they are implemented
-        // - Credential Detail
-        // - Add/Edit Credential
+        // Add Credential Screen
+        composable(VaultenDestinations.ADD_CREDENTIAL) {
+            val viewModel: CreateEditCredentialViewModel = viewModel(
+                factory = CreateEditCredentialViewModelFactory(
+                    createCredentialUseCase,
+                    updateCredentialUseCase
+                )
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            CreateEditCredentialScreen(
+                uiState = uiState,
+                onNameChange = viewModel::onNameChange,
+                onUsernameChange = viewModel::onUsernameChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onUrlChange = viewModel::onUrlChange,
+                onSaveClick = viewModel::saveCredential,
+                onCancelClick = {
+                    navController.popBackStack()
+                }
+            )
+
+            // Navigate back when saved
+            if (uiState.savedSuccessfully) {
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(500)
+                    navController.popBackStack()
+                }
+            }
+        }
+
+        // Edit Credential Screen
+        composable(VaultenDestinations.EDIT_CREDENTIAL) { backStackEntry ->
+            val credentialId = backStackEntry.arguments?.getString("credentialId") ?: return@composable
+            val viewModel: CreateEditCredentialViewModel = viewModel(
+                factory = CreateEditCredentialViewModelFactory(
+                    createCredentialUseCase,
+                    updateCredentialUseCase,
+                    getCredentialByIdUseCase
+                )
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            // Load credential when screen is first shown
+            androidx.compose.runtime.LaunchedEffect(credentialId) {
+                viewModel.loadCredentialForEditing(credentialId)
+            }
+
+            CreateEditCredentialScreen(
+                uiState = uiState,
+                onNameChange = viewModel::onNameChange,
+                onUsernameChange = viewModel::onUsernameChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onUrlChange = viewModel::onUrlChange,
+                onSaveClick = viewModel::saveCredential,
+                onCancelClick = {
+                    navController.popBackStack()
+                }
+            )
+
+            // Navigate back when saved
+            if (uiState.savedSuccessfully) {
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(500)
+                    navController.popBackStack()
+                }
+            }
+        }
+
+        // TODO: Add other screen destinations as they are implemented
         // - Password Generator
         // - Security Settings
     }
