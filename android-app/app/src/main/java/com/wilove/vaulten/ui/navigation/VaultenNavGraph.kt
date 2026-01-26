@@ -10,7 +10,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.wilove.vaulten.data.repository.FakeVaultRepository
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
+import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
 import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
+import com.wilove.vaulten.ui.credentials.CredentialDetailScreen
+import com.wilove.vaulten.ui.credentials.CredentialDetailViewModel
 import com.wilove.vaulten.ui.credentials.CredentialsListScreen
 import com.wilove.vaulten.ui.credentials.CredentialsListViewModel
 import com.wilove.vaulten.ui.dashboard.DashboardScreen
@@ -40,6 +43,7 @@ fun VaultenNavGraph(
     val repository = FakeVaultRepository()
     val getDashboardDataUseCase = GetDashboardDataUseCase(repository)
     val getAllCredentialsUseCase = GetAllCredentialsUseCase(repository)
+    val getCredentialByIdUseCase = GetCredentialByIdUseCase(repository)
 
     NavHost(
         navController = navController,
@@ -139,7 +143,40 @@ fun VaultenNavGraph(
             )
         }
 
-        // TODO: Add other screen destinations as they are implemented
+        // Credential Detail Screen
+        composable(VaultenDestinations.CREDENTIAL_DETAIL) { backStackEntry ->
+            val credentialId = backStackEntry.arguments?.getString("credentialId") ?: return@composable
+            val viewModel: CredentialDetailViewModel = viewModel(
+                factory = CredentialDetailViewModelFactory(getCredentialByIdUseCase)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            // Load credential when screen is first shown
+            androidx.compose.runtime.LaunchedEffect(credentialId) {
+                viewModel.loadCredential(credentialId)
+            }
+
+            CredentialDetailScreen(
+                uiState = uiState,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onEditClick = {
+                    navController.navigate(VaultenDestinations.editCredential(credentialId))
+                },
+                onDeleteClick = {
+                    // TODO: Implement delete credential
+                    navController.popBackStack()
+                },
+                onCopyField = { fieldName, fieldValue ->
+                    // TODO: Implement copy to clipboard
+                    viewModel.markFieldAsCopied(fieldName)
+                },
+                onTogglePasswordVisibility = viewModel::togglePasswordVisibility
+            )
+        }
+
+        // TODO: Add other screen destinations as they are implementedeen destinations as they are implemented
         // - Credential Detail
         // - Add/Edit Credential
         // - Password Generator
