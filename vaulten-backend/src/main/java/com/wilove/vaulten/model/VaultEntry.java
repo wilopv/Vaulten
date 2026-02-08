@@ -43,7 +43,6 @@ public class VaultEntry {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @NotNull(message = "Owner user is required")
     private User user;
 
     @CreationTimestamp

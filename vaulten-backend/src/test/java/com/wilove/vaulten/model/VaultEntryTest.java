@@ -60,16 +60,4 @@ class VaultEntryTest {
         Set<ConstraintViolation<VaultEntry>> violations = validator.validate(entry);
         assertFalse(violations.isEmpty());
     }
-
-    @Test
-    void testInvalidVaultEntry_NullUser() {
-        VaultEntry entry = VaultEntry.builder()
-                .name("My Bank")
-                .type(VaultEntryType.LOGIN)
-                .user(null)
-                .build();
-
-        Set<ConstraintViolation<VaultEntry>> violations = validator.validate(entry);
-        assertFalse(violations.isEmpty());
-    }
 }

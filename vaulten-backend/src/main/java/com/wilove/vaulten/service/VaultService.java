@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,12 @@ public class VaultService {
 
     public List<VaultEntry> getEntriesForUser(User user) {
         return vaultEntryRepository.findAllByUser(user).stream()
+                .peek(this::decryptSensitiveFields)
+                .collect(Collectors.toList());
+    }
+
+    public List<VaultEntry> getEntriesModifiedSince(User user, LocalDateTime since) {
+        return vaultEntryRepository.findByUserAndUpdatedAtAfter(user, since).stream()
                 .peek(this::decryptSensitiveFields)
                 .collect(Collectors.toList());
     }

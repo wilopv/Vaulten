@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -143,5 +144,22 @@ class VaultServiceTest {
 
         // Then
         verify(vaultEntryRepository).delete(testEntry);
+    }
+
+    @Test
+    void getEntriesModifiedSince_ShouldDecryptEntries() {
+        // Given
+        LocalDateTime since = LocalDateTime.now().minusDays(1);
+        testEntry.setPassword("encrypted_pass");
+        when(vaultEntryRepository.findByUserAndUpdatedAtAfter(testUser, since)).thenReturn(List.of(testEntry));
+        when(encryptionService.decrypt("encrypted_pass")).thenReturn("plain_pass");
+
+        // When
+        List<VaultEntry> results = vaultService.getEntriesModifiedSince(testUser, since);
+
+        // Then
+        assertEquals(1, results.size());
+        assertEquals("plain_pass", results.get(0).getPassword());
+        verify(encryptionService).decrypt("encrypted_pass");
     }
 }

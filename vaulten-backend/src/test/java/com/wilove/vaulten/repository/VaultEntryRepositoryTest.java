@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -90,5 +91,30 @@ class VaultEntryRepositoryTest {
 
         assertFalse(results.isEmpty());
         assertEquals("Gmail Account", results.get(0).getName());
+    }
+
+    @Test
+    void testFindByUserAndUpdatedAtAfter() throws InterruptedException {
+        VaultEntry entry = VaultEntry.builder()
+                .name("Old Entry")
+                .type(VaultEntryType.NOTE)
+                .user(testUser)
+                .build();
+        vaultEntryRepository.save(entry);
+
+        LocalDateTime checkpoint = LocalDateTime.now();
+        Thread.sleep(100); // Ensure time difference
+
+        VaultEntry newEntry = VaultEntry.builder()
+                .name("New Entry")
+                .type(VaultEntryType.LOGIN)
+                .user(testUser)
+                .build();
+        vaultEntryRepository.save(newEntry);
+
+        List<VaultEntry> results = vaultEntryRepository.findByUserAndUpdatedAtAfter(testUser, checkpoint);
+
+        assertEquals(1, results.size());
+        assertEquals("New Entry", results.get(0).getName());
     }
 }

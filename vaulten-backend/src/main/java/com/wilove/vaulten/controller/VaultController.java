@@ -1,18 +1,22 @@
 package com.wilove.vaulten.controller;
 
+import com.wilove.vaulten.dto.SyncResponse;
 import com.wilove.vaulten.model.User;
 import com.wilove.vaulten.model.VaultEntry;
 import com.wilove.vaulten.service.VaultService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -28,6 +32,22 @@ public class VaultController {
     @Operation(summary = "Get all vault entries for the current user")
     public ResponseEntity<List<VaultEntry>> getAllEntries() {
         return ResponseEntity.ok(vaultService.getEntriesForUser(getCurrentUser()));
+    }
+
+    @GetMapping("/sync")
+    @Operation(summary = "Get modified entries since last sync")
+    public ResponseEntity<SyncResponse> sync(
+            @Parameter(description = "Last sync timestamp (ISO 8601)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime since) {
+
+        LocalDateTime serverTime = LocalDateTime.now();
+        List<VaultEntry> entries = (since == null)
+                ? vaultService.getEntriesForUser(getCurrentUser())
+                : vaultService.getEntriesModifiedSince(getCurrentUser(), since);
+
+        return ResponseEntity.ok(SyncResponse.builder()
+                .updatedEntries(entries)
+                .serverTime(serverTime)
+                .build());
     }
 
     @PostMapping

@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -68,6 +69,7 @@ class VaultControllerTest {
                 .username("user123")
                 .password("plain_pass")
                 .type(VaultEntryType.LOGIN)
+                .user(testUser)
                 .build();
     }
 
@@ -79,6 +81,18 @@ class VaultControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].name").value("Test Login"));
+    }
+
+    @Test
+    void testSync_ShouldReturnModifiedEntries() throws Exception {
+        when(vaultService.getEntriesModifiedSince(any(), any(LocalDateTime.class)))
+                .thenReturn(List.of(testEntry));
+
+        mockMvc.perform(get("/api/vault/sync")
+                .param("since", "2024-01-01T10:00:00"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.updatedEntries.length()").value(1))
+                .andExpect(jsonPath("$.serverTime").exists());
     }
 
     @Test
