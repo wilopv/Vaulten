@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vault")
+@RequestMapping("/vault")
 @RequiredArgsConstructor
 @Tag(name = "Vault", description = "Vault entry management endpoints")
 @SecurityRequirement(name = "bearerAuth")
