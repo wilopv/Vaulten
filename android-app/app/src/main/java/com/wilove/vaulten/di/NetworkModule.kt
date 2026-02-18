@@ -11,14 +11,14 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import timber.log.Timber
+import android.util.Log
 
 /**
  * Dependency Injection module (singleton object) for Network related components.
  */
 object NetworkModule {
 
-    private const val BASE_URL = "http://localhost:8080/"
+    private const val BASE_URL: String = "http://192.168.1.213:8080/"
     private val json = Json { ignoreUnknownKeys = true }
     private val contentType = "application/json".toMediaType()
 
@@ -33,7 +33,7 @@ object NetworkModule {
      * Configures and provides the OkHttpClient with AuthInterceptor and Logging.
      */
     fun provideOkHttpClient(tokenManager: TokenManager): OkHttpClient {
-        val logging = HttpLoggingInterceptor { message -> Timber.d(message) }
+        val logging = HttpLoggingInterceptor { message -> Log.d("OkHttp", message) }
         logging.level = HttpLoggingInterceptor.Level.BODY
 
         return OkHttpClient.Builder()
