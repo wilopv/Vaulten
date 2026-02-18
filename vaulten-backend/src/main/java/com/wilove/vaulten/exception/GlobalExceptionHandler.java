@@ -57,6 +57,7 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
+            System.out.println("Validation Error in field '" + fieldName + "': " + errorMessage);
             errors.put(fieldName, errorMessage);
         });
         body.put("errors", errors);
