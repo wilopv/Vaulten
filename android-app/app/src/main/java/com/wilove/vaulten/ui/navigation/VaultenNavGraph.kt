@@ -8,7 +8,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.wilove.vaulten.data.repository.FakeVaultRepository
+import com.wilove.vaulten.data.repository.AuthRepositoryImpl
+import com.wilove.vaulten.data.repository.VaultRepositoryImpl
+import com.wilove.vaulten.di.NetworkModule
 import com.wilove.vaulten.domain.usecase.CreateCredentialUseCase
 import com.wilove.vaulten.domain.usecase.GeneratePasswordUseCase
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
@@ -45,14 +47,27 @@ fun VaultenNavGraph(
     modifier: Modifier = Modifier,
     startDestination: String = VaultenDestinations.LOGIN
 ) {
-    // Create repository and use case instances
-    // In a real app, these would be injected via Hilt or similar
-    val repository = FakeVaultRepository()
-    val getDashboardDataUseCase = GetDashboardDataUseCase(repository)
-    val getAllCredentialsUseCase = GetAllCredentialsUseCase(repository)
-    val getCredentialByIdUseCase = GetCredentialByIdUseCase(repository)
-    val createCredentialUseCase = CreateCredentialUseCase(repository)
-    val updateCredentialUseCase = UpdateCredentialUseCase(repository)
+    // Get context for TokenManager
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    // Create real repository and use case instances via manual DI
+    val tokenManager = NetworkModule.provideTokenManager(context)
+    val okHttpClient = NetworkModule.provideOkHttpClient(tokenManager)
+    
+    val authRepository = com.wilove.vaulten.data.repository.AuthRepositoryImpl(
+        NetworkModule.provideAuthApiService(okHttpClient),
+        tokenManager
+    )
+    
+    val vaultRepository = com.wilove.vaulten.data.repository.VaultRepositoryImpl(
+        NetworkModule.provideVaultApiService(okHttpClient)
+    )
+    
+    val getDashboardDataUseCase = GetDashboardDataUseCase(vaultRepository)
+    val getAllCredentialsUseCase = GetAllCredentialsUseCase(vaultRepository)
+    val getCredentialByIdUseCase = GetCredentialByIdUseCase(vaultRepository)
+    val createCredentialUseCase = CreateCredentialUseCase(vaultRepository)
+    val updateCredentialUseCase = UpdateCredentialUseCase(vaultRepository)
     val generatePasswordUseCase = GeneratePasswordUseCase()
 
     NavHost(
@@ -62,7 +77,9 @@ fun VaultenNavGraph(
     ) {
         // Login Screen
         composable(VaultenDestinations.LOGIN) {
-            val viewModel: LoginViewModel = viewModel()
+            val viewModel: LoginViewModel = viewModel(
+                factory = LoginViewModelFactory(authRepository)
+            )
             val uiState by viewModel.uiState.collectAsState()
 
             LoginScreen(
@@ -70,9 +87,8 @@ fun VaultenNavGraph(
                 onEmailChange = viewModel::onEmailChange,
                 onPasswordChange = viewModel::onPasswordChange,
                 onUnlockClick = {
-                    if (viewModel.onUnlockClick()) {
+                    viewModel.onUnlockClick {
                         // Navigate to dashboard on successful unlock
-                        // In real app, this would wait for actual authentication
                         navController.navigate(VaultenDestinations.DASHBOARD) {
                             popUpTo(VaultenDestinations.LOGIN) { inclusive = true }
                         }
@@ -87,7 +103,9 @@ fun VaultenNavGraph(
 
         // Signup Screen
         composable(VaultenDestinations.SIGNUP) {
-            val viewModel: SignupViewModel = viewModel()
+            val viewModel: SignupViewModel = viewModel(
+                factory = SignupViewModelFactory(authRepository)
+            )
             val uiState by viewModel.uiState.collectAsState()
 
             SignupScreen(
@@ -97,9 +115,8 @@ fun VaultenNavGraph(
                 onPasswordChange = viewModel::onPasswordChange,
                 onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
                 onSignupClick = {
-                    if (viewModel.onSignupClick()) {
+                    viewModel.onSignupClick {
                         // Navigate to dashboard on successful signup
-                        // In real app, this would wait for actual account creation
                         navController.navigate(VaultenDestinations.DASHBOARD) {
                             popUpTo(VaultenDestinations.LOGIN) { inclusive = true }
                         }
