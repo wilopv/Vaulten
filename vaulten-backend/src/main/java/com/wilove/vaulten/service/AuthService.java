@@ -58,14 +58,22 @@ public class AuthService {
      * Authenticate user and generate token
      */
     public AuthResponse login(LoginRequest request) {
-        // Find user by username
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
+        String email = request.getUsername(); // The field is called 'username' in the DTO but contains the email
+        System.out.println("Login attempt for email: " + email);
+
+        // Find user ONLY by email
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    System.out.println("User not found with email: " + email);
+                    throw new InvalidCredentialsException("Invalid username or password");
+                });
 
         // Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            System.out.println("Password mismatch for user: " + user.getEmail());
             throw new InvalidCredentialsException("Invalid username or password");
         }
+        System.out.println("Login successful for user: " + user.getEmail());
 
         // Generate JWT token
         String token = jwtService.generateToken(user.getUsername());
