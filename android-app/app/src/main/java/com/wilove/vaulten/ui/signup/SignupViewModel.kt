@@ -1,16 +1,21 @@
 package com.wilove.vaulten.ui.signup
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.wilove.vaulten.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for the Signup screen.
  * Owns [SignupUiState] and exposes intent handlers for the UI.
  */
-class SignupViewModel : ViewModel() {
+class SignupViewModel(
+    private val authRepository: AuthRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(SignupUiState())
     val uiState: StateFlow<SignupUiState> = _uiState.asStateFlow()
 
@@ -35,47 +40,56 @@ class SignupViewModel : ViewModel() {
     }
 
     /**
-     * Mock-only action for the primary button.
-     * Validates input and toggles a loading state without real auth.
+     * Registers the user using the provided information.
      */
-    fun onSignupClick(): Boolean {
+    fun onSignupClick(onSuccess: () -> Unit) {
         val current = _uiState.value
-        if (current.isLoading) return false
+        if (current.isLoading) return
 
         if (current.fullName.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Full name is required.") }
-            return false
+            return
         }
 
         if (current.email.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Email is required.") }
-            return false
+            return
         }
 
         if (!EMAIL_REGEX.matches(current.email)) {
             _uiState.update { it.copy(errorMessage = "Enter a valid email address.") }
-            return false
+            return
         }
 
         if (current.masterPassword.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Master password is required.") }
-            return false
+            return
         }
 
         if (current.confirmPassword.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Confirm your password.") }
-            return false
+            return
         }
 
         if (current.masterPassword != current.confirmPassword) {
             _uiState.update { it.copy(errorMessage = "Passwords do not match.") }
-            return false
+            return
         }
 
-        // Mock-only: show a loading state without real authentication.
-        // TODO: Wire email + password into the real signup flow once available.
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-        return true
+
+        viewModelScope.launch {
+            // Using fullName as username for the backend RegisterRequest
+            val result = authRepository.register(current.fullName, current.email, current.masterPassword)
+            
+            _uiState.update { it.copy(isLoading = false) }
+            
+            result.onSuccess {
+                onSuccess()
+            }.onFailure { e ->
+                _uiState.update { it.copy(errorMessage = e.message ?: "Registration failed") }
+            }
+        }
     }
 
     private companion object {

@@ -4,22 +4,24 @@ import com.wilove.vaulten.data.remote.AuthApiService
 import com.wilove.vaulten.data.remote.model.LoginRequest
 import com.wilove.vaulten.data.remote.model.RegisterRequest
 import com.wilove.vaulten.data.local.TokenManager
+import com.wilove.vaulten.domain.repository.AuthRepository
 import retrofit2.Response
 
 /**
  * Repository handling authentication logic and token lifecycle.
+ * Implements the domain [AuthRepository] interface.
  */
-class AuthRepository(
+class AuthRepositoryImpl(
     private val authApiService: AuthApiService,
     private val tokenManager: TokenManager
-) {
+) : AuthRepository {
 
     /**
      * Registers a new user and returns a Result.
      */
-    suspend fun register(request: RegisterRequest): Result<Unit> {
+    override suspend fun register(username: String, email: String, password: String): Result<Unit> {
         return try {
-            val response = authApiService.register(request)
+            val response = authApiService.register(RegisterRequest(username, email, password))
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
@@ -33,9 +35,9 @@ class AuthRepository(
     /**
      * Logs in the user, saves the token on success, and returns a Result.
      */
-    suspend fun login(request: LoginRequest): Result<String> {
+    override suspend fun login(username: String, password: String): Result<String> {
         return try {
-            val response = authApiService.login(request)
+            val response = authApiService.login(LoginRequest(username, password))
             if (response.isSuccessful && response.body() != null) {
                 val token = response.body()!!.token
                 tokenManager.saveToken(token)
@@ -51,12 +53,12 @@ class AuthRepository(
     /**
      * Clears the stored token from the device.
      */
-    fun logout() {
+    override fun logout() {
         tokenManager.deleteToken()
     }
 
     /**
      * Returns the currently stored token if it exists.
      */
-    fun getLoggedToken(): String? = tokenManager.getToken()
+    override fun getLoggedToken(): String? = tokenManager.getToken()
 }
