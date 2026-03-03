@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -38,15 +39,18 @@ public class SecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(AbstractHttpConfigurer::disable)
                                 .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/auth/**"))
+                                                .permitAll()
                                                 .requestMatchers(
-                                                                "/auth/**",
-                                                                "/swagger-ui/**",
-                                                                "/swagger-ui.html",
-                                                                "/v3/api-docs/**",
-                                                                "/api-docs/**",
-                                                                "/swagger-resources/**",
-                                                                "/webjars/**",
-                                                                "/h2-console/**")
+                                                                AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
+                                                                AntPathRequestMatcher.antMatcher("/swagger-ui.html"),
+                                                                AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api-docs/**"),
+                                                                AntPathRequestMatcher
+                                                                                .antMatcher("/swagger-resources/**"),
+                                                                AntPathRequestMatcher.antMatcher("/webjars/**"),
+                                                                AntPathRequestMatcher.antMatcher("/error"),
+                                                                AntPathRequestMatcher.antMatcher("/h2-console/**"))
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))

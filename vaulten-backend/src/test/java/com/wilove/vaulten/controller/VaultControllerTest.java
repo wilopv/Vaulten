@@ -17,6 +17,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -71,13 +73,17 @@ class VaultControllerTest {
                 .type(VaultEntryType.LOGIN)
                 .user(testUser)
                 .build();
+
+        // Set mock authentication for tests
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(testUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
     @Test
     void getAllEntries_ShouldReturnList() throws Exception {
         when(vaultService.getEntriesForUser(any())).thenReturn(List.of(testEntry));
 
-        mockMvc.perform(get("/api/vault"))
+        mockMvc.perform(get("/vault"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].name").value("Test Login"));
@@ -88,7 +94,7 @@ class VaultControllerTest {
         when(vaultService.getEntriesModifiedSince(any(), any(LocalDateTime.class)))
                 .thenReturn(List.of(testEntry));
 
-        mockMvc.perform(get("/api/vault/sync")
+        mockMvc.perform(get("/vault/sync")
                 .param("since", "2024-01-01T10:00:00"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedEntries.length()").value(1))
@@ -99,7 +105,7 @@ class VaultControllerTest {
     void createEntry_ShouldReturnCreated() throws Exception {
         when(vaultService.createEntry(any(VaultEntry.class), any())).thenReturn(testEntry);
 
-        mockMvc.perform(post("/api/vault")
+        mockMvc.perform(post("/vault")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testEntry)))
                 .andExpect(status().isOk())
@@ -110,7 +116,7 @@ class VaultControllerTest {
     void getEntryById_ShouldReturnEntry() throws Exception {
         when(vaultService.getEntryById(eq(1L), any())).thenReturn(testEntry);
 
-        mockMvc.perform(get("/api/vault/1"))
+        mockMvc.perform(get("/vault/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Test Login"));
     }
@@ -119,7 +125,7 @@ class VaultControllerTest {
     void updateEntry_ShouldReturnUpdated() throws Exception {
         when(vaultService.updateEntry(eq(1L), any(VaultEntry.class), any())).thenReturn(testEntry);
 
-        mockMvc.perform(put("/api/vault/1")
+        mockMvc.perform(put("/vault/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testEntry)))
                 .andExpect(status().isOk())
@@ -128,7 +134,7 @@ class VaultControllerTest {
 
     @Test
     void deleteEntry_ShouldReturnNoContent() throws Exception {
-        mockMvc.perform(delete("/api/vault/1"))
+        mockMvc.perform(delete("/vault/1"))
                 .andExpect(status().isNoContent());
 
         verify(vaultService).deleteEntry(eq(1L), any());

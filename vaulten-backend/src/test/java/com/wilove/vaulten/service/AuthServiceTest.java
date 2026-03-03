@@ -140,7 +140,7 @@ class AuthServiceTest {
     @Test
     void testLoginSuccess() {
         // Given
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         when(jwtService.generateToken(anyString())).thenReturn("mock.jwt.token");
 
@@ -154,7 +154,7 @@ class AuthServiceTest {
         assertEquals("test@example.com", response.getEmail());
         assertEquals(Role.USER, response.getRole());
 
-        verify(userRepository).findByUsername("testuser");
+        verify(userRepository).findByEmail("testuser");
         verify(passwordEncoder).matches("password123", "$2a$10$hashedpassword");
         verify(jwtService).generateToken("testuser");
     }
@@ -162,7 +162,7 @@ class AuthServiceTest {
     @Test
     void testLoginUserNotFound() {
         // Given
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         // When & Then
         InvalidCredentialsException exception = assertThrows(
@@ -170,14 +170,14 @@ class AuthServiceTest {
                 () -> authService.login(loginRequest));
 
         assertEquals("Invalid username or password", exception.getMessage());
-        verify(userRepository).findByUsername("testuser");
+        verify(userRepository).findByEmail("testuser");
         verify(passwordEncoder, never()).matches(anyString(), anyString());
     }
 
     @Test
     void testLoginWrongPassword() {
         // Given
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         // When & Then
@@ -186,7 +186,7 @@ class AuthServiceTest {
                 () -> authService.login(loginRequest));
 
         assertEquals("Invalid username or password", exception.getMessage());
-        verify(userRepository).findByUsername("testuser");
+        verify(userRepository).findByEmail("testuser");
         verify(passwordEncoder).matches("password123", "$2a$10$hashedpassword");
         verify(jwtService, never()).generateToken(anyString());
     }
