@@ -19,102 +19,104 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test")
 class VaultEntryRepositoryTest {
 
-    @Autowired
-    private VaultEntryRepository vaultEntryRepository;
+        @Autowired
+        private VaultEntryRepository vaultEntryRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+        @Autowired
+        private UserRepository userRepository;
 
-    private User testUser;
+        private User testUser;
 
-    @BeforeEach
-    void setUp() {
-        testUser = User.builder()
-                .username("testuser")
-                .email("test@example.com")
-                .password("password123")
-                .role(Role.USER)
-                .build();
-        userRepository.save(testUser);
-    }
+        @BeforeEach
+        void setUp() {
+                testUser = User.builder()
+                                .username("testuser")
+                                .email("test@example.com")
+                                .password("password123")
+                                .role(Role.USER)
+                                .build();
+                userRepository.save(testUser);
+        }
 
-    @Test
-    void testSaveAndFindVaultEntry() {
-        VaultEntry entry = VaultEntry.builder()
-                .name("Test Login")
-                .username("user123")
-                .password("encrypted_pass")
-                .type(VaultEntryType.LOGIN)
-                .user(testUser)
-                .build();
+        @Test
+        void testSaveAndFindVaultEntry() {
+                VaultEntry entry = VaultEntry.builder()
+                                .name("Test Login")
+                                .username("user123")
+                                .password("encrypted_pass")
+                                .type(VaultEntryType.LOGIN)
+                                .user(testUser)
+                                .build();
 
-        VaultEntry savedEntry = vaultEntryRepository.save(entry);
+                VaultEntry savedEntry = vaultEntryRepository.save(entry);
 
-        assertNotNull(savedEntry.getId());
-        assertEquals("Test Login", savedEntry.getName());
-        assertNotNull(savedEntry.getCreatedAt());
-        assertNotNull(savedEntry.getUpdatedAt());
-    }
+                assertNotNull(savedEntry.getId());
+                assertEquals("Test Login", savedEntry.getName());
+                assertNotNull(savedEntry.getCreatedAt());
+                assertNotNull(savedEntry.getUpdatedAt());
+        }
 
-    @Test
-    void testFindAllByUser() {
-        VaultEntry entry1 = VaultEntry.builder()
-                .name("Login 1")
-                .type(VaultEntryType.LOGIN)
-                .user(testUser)
-                .build();
+        @Test
+        void testFindAllByUser() {
+                VaultEntry entry1 = VaultEntry.builder()
+                                .name("Login 1")
+                                .type(VaultEntryType.LOGIN)
+                                .user(testUser)
+                                .build();
 
-        VaultEntry entry2 = VaultEntry.builder()
-                .name("Note 1")
-                .type(VaultEntryType.NOTE)
-                .user(testUser)
-                .build();
+                VaultEntry entry2 = VaultEntry.builder()
+                                .name("Note 1")
+                                .type(VaultEntryType.NOTE)
+                                .user(testUser)
+                                .build();
 
-        vaultEntryRepository.save(entry1);
-        vaultEntryRepository.save(entry2);
+                vaultEntryRepository.save(entry1);
+                vaultEntryRepository.save(entry2);
 
-        List<VaultEntry> userEntries = vaultEntryRepository.findAllByUser(testUser);
+                List<VaultEntry> userEntries = vaultEntryRepository.findAllByUser(testUser);
 
-        assertEquals(2, userEntries.size());
-    }
+                assertEquals(2, userEntries.size());
+        }
 
-    @Test
-    void testFindByUserAndNameContainingIgnoreCase() {
-        VaultEntry entry = VaultEntry.builder()
-                .name("Gmail Account")
-                .type(VaultEntryType.LOGIN)
-                .user(testUser)
-                .build();
-        vaultEntryRepository.save(entry);
+        @Test
+        void testFindByUserAndNameContainingIgnoreCase() {
+                VaultEntry entry = VaultEntry.builder()
+                                .name("Gmail Account")
+                                .type(VaultEntryType.LOGIN)
+                                .user(testUser)
+                                .build();
+                vaultEntryRepository.save(entry);
 
-        List<VaultEntry> results = vaultEntryRepository.findByUserAndNameContainingIgnoreCase(testUser, "GMAIL");
+                List<VaultEntry> results = vaultEntryRepository.findByUserAndNameContainingIgnoreCase(testUser,
+                                "GMAIL");
 
-        assertFalse(results.isEmpty());
-        assertEquals("Gmail Account", results.get(0).getName());
-    }
+                assertFalse(results.isEmpty());
+                assertEquals("Gmail Account", results.get(0).getName());
+        }
 
-    @Test
-    void testFindByUserAndUpdatedAtAfter() throws InterruptedException {
-        VaultEntry entry = VaultEntry.builder()
-                .name("Old Entry")
-                .type(VaultEntryType.NOTE)
-                .user(testUser)
-                .build();
-        vaultEntryRepository.save(entry);
+        @Test
+        void testFindByUserAndUpdatedAtAfter() throws InterruptedException {
+                VaultEntry entry = VaultEntry.builder()
+                                .name("Old Entry")
+                                .type(VaultEntryType.NOTE)
+                                .user(testUser)
+                                .build();
+                vaultEntryRepository.save(entry);
 
-        LocalDateTime checkpoint = LocalDateTime.now();
-        Thread.sleep(100); // Ensure time difference
+                LocalDateTime checkpoint = LocalDateTime.now();
+                Thread.sleep(100); // Ensure time difference
 
-        VaultEntry newEntry = VaultEntry.builder()
-                .name("New Entry")
-                .type(VaultEntryType.LOGIN)
-                .user(testUser)
-                .build();
-        vaultEntryRepository.save(newEntry);
+                VaultEntry newEntry = VaultEntry.builder()
+                                .name("New Entry")
+                                .type(VaultEntryType.LOGIN)
+                                .user(testUser)
+                                .build();
+                vaultEntryRepository.save(newEntry);
 
-        List<VaultEntry> results = vaultEntryRepository.findByUserAndUpdatedAtAfter(testUser, checkpoint);
+                List<VaultEntry> results = vaultEntryRepository
+                                .findByUserIdAndUpdatedAtGreaterThanEqual(testUser.getId(), checkpoint);
 
-        assertEquals(1, results.size());
-        assertEquals("New Entry", results.get(0).getName());
-    }
+                assertEquals(1, results.size());
+                assertEquals("New Entry", results.get(0).getName());
+        }
 }

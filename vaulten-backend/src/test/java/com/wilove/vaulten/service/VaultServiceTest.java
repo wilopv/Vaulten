@@ -74,7 +74,7 @@ class VaultServiceTest {
         // Given
         testEntry.setPassword("encrypted_password");
         testEntry.setNotes("encrypted_notes");
-        when(vaultEntryRepository.findAllByUser(testUser)).thenReturn(List.of(testEntry));
+        when(vaultEntryRepository.findByUserId(testUser.getId())).thenReturn(List.of(testEntry));
         when(encryptionService.decrypt("encrypted_password")).thenReturn("plain_password");
         when(encryptionService.decrypt("encrypted_notes")).thenReturn("secret notes");
 
@@ -151,7 +151,8 @@ class VaultServiceTest {
         // Given
         LocalDateTime since = LocalDateTime.now().minusDays(1);
         testEntry.setPassword("encrypted_pass");
-        when(vaultEntryRepository.findByUserAndUpdatedAtAfter(testUser, since)).thenReturn(List.of(testEntry));
+        when(vaultEntryRepository.findByUserIdAndUpdatedAtGreaterThanEqual(testUser.getId(), since))
+                .thenReturn(List.of(testEntry));
         when(encryptionService.decrypt("encrypted_pass")).thenReturn("plain_pass");
 
         // When

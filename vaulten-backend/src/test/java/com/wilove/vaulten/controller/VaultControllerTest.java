@@ -1,6 +1,7 @@
 package com.wilove.vaulten.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wilove.vaulten.dto.VaultEntryRequest;
 import com.wilove.vaulten.model.User;
 import com.wilove.vaulten.model.VaultEntry;
 import com.wilove.vaulten.model.VaultEntryType;
@@ -58,6 +59,7 @@ class VaultControllerTest {
 
     private User testUser;
     private VaultEntry testEntry;
+    private VaultEntryRequest testRequest;
 
     @BeforeEach
     void setUp() {
@@ -72,6 +74,13 @@ class VaultControllerTest {
                 .password("plain_pass")
                 .type(VaultEntryType.LOGIN)
                 .user(testUser)
+                .build();
+
+        testRequest = VaultEntryRequest.builder()
+                .name("Test Login")
+                .username("user123")
+                .password("plain_pass")
+                .type(VaultEntryType.LOGIN)
                 .build();
 
         // Set mock authentication for tests
@@ -107,7 +116,7 @@ class VaultControllerTest {
 
         mockMvc.perform(post("/vault")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testEntry)))
+                .content(objectMapper.writeValueAsString(testRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Test Login"));
     }
@@ -127,7 +136,7 @@ class VaultControllerTest {
 
         mockMvc.perform(put("/vault/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testEntry)))
+                .content(objectMapper.writeValueAsString(testRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Test Login"));
     }
