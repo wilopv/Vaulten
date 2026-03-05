@@ -5,6 +5,7 @@ import com.wilove.vaulten.model.User;
 import com.wilove.vaulten.model.VaultEntry;
 import com.wilove.vaulten.repository.VaultEntryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VaultService {
 
     private final VaultEntryRepository vaultEntryRepository;
@@ -21,19 +23,20 @@ public class VaultService {
 
     @Transactional
     public VaultEntry createEntry(VaultEntry entry, User user) {
+        log.debug("Creating vault entry: {} for user: {}", entry.getName(), user.getUsername());
         entry.setUser(user);
         encryptSensitiveFields(entry);
         return vaultEntryRepository.save(entry);
     }
 
     public List<VaultEntry> getEntriesForUser(User user) {
-        return vaultEntryRepository.findAllByUser(user).stream()
+        return vaultEntryRepository.findByUserId(user.getId()).stream()
                 .peek(this::decryptSensitiveFields)
                 .collect(Collectors.toList());
     }
 
     public List<VaultEntry> getEntriesModifiedSince(User user, LocalDateTime since) {
-        return vaultEntryRepository.findByUserAndUpdatedAtAfter(user, since).stream()
+        return vaultEntryRepository.findByUserIdAndUpdatedAtGreaterThanEqual(user.getId(), since).stream()
                 .peek(this::decryptSensitiveFields)
                 .collect(Collectors.toList());
     }

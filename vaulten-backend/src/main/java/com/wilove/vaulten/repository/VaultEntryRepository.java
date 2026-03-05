@@ -12,7 +12,11 @@ import java.util.List;
 public interface VaultEntryRepository extends JpaRepository<VaultEntry, Long> {
     List<VaultEntry> findAllByUser(User user);
 
+    List<VaultEntry> findByUserId(Long userId);
+
     List<VaultEntry> findByUserAndNameContainingIgnoreCase(User user, String name);
 
-    List<VaultEntry> findByUserAndUpdatedAtAfter(User user, LocalDateTime since);
+    List<VaultEntry> findByUserIdAndUpdatedAtAfter(Long userId, LocalDateTime since);
+
+    List<VaultEntry> findByUserIdAndUpdatedAtGreaterThanEqual(Long userId, LocalDateTime since);
 }
