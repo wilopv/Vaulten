@@ -85,16 +85,31 @@ class SignupViewModel(
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
+        // Clear any previous session before starting a new registration
+        authRepository.logout()
+
         viewModelScope.launch {
-            // Using fullName as username for the backend RegisterRequest
-            val result = authRepository.register(current.fullName, current.email, current.masterPassword)
+            // Using email as identifier for registration and login
+            val registerResult = authRepository.register(current.fullName, current.email, current.masterPassword)
             
-            _uiState.update { it.copy(isLoading = false) }
-            
-            result.onSuccess {
-                onSuccess()
-            }.onFailure { e ->
-                _uiState.update { it.copy(errorMessage = e.message ?: "Registration failed") }
+            if (registerResult.isSuccess) {
+                // Auto-login after successful registration
+                val loginResult = authRepository.login(current.email, current.masterPassword)
+                
+                _uiState.update { it.copy(isLoading = false) }
+                
+                loginResult.onSuccess {
+                    onSuccess()
+                }.onFailure { e ->
+                    _uiState.update { it.copy(errorMessage = "Registration was successful, but automatic login failed: ${e.message}") }
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = registerResult.exceptionOrNull()?.message ?: "Registration failed"
+                    )
+                }
             }
         }
     }

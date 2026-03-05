@@ -86,12 +86,15 @@ class SignupViewModelTest {
     }
 
     @Test
-    fun `onSignupClick calls repository register when inputs are valid`() = runTest(testDispatcher) {
+    fun `onSignupClick calls repository register and login when inputs are valid`() = runTest(testDispatcher) {
         viewModel.onFullNameChange("User Name")
         viewModel.onEmailChange("user@example.com")
         viewModel.onPasswordChange("password123")
         viewModel.onConfirmPasswordChange("password123")
+        
+        coEvery { authRepository.logout() } returns Unit
         coEvery { authRepository.register(any(), any(), any()) } returns Result.success(Unit)
+        coEvery { authRepository.login(any(), any()) } returns Result.success("mock-token")
         
         var successCalled = false
         viewModel.onSignupClick { successCalled = true }
@@ -99,7 +102,32 @@ class SignupViewModelTest {
         assertTrue(viewModel.uiState.value.isLoading)
         advanceUntilIdle()
 
+        io.mockk.verify { authRepository.logout() }
+        io.mockk.verify { authRepository.register("User Name", "user@example.com", "password123") }
+        io.mockk.verify { authRepository.login("user@example.com", "password123") }
+        
         assertTrue(successCalled)
         assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `onSignupClick shows error when register succeeds but login fails`() = runTest(testDispatcher) {
+        viewModel.onFullNameChange("User Name")
+        viewModel.onEmailChange("user@example.com")
+        viewModel.onPasswordChange("password123")
+        viewModel.onConfirmPasswordChange("password123")
+        
+        coEvery { authRepository.logout() } returns Unit
+        coEvery { authRepository.register(any(), any(), any()) } returns Result.success(Unit)
+        coEvery { authRepository.login(any(), any()) } returns Result.failure(Exception("Login service unavailable"))
+        
+        var successCalled = false
+        viewModel.onSignupClick { successCalled = true }
+        
+        advanceUntilIdle()
+
+        assertFalse(successCalled)
+        assertFalse(viewModel.uiState.value.isLoading)
+        assertTrue(viewModel.uiState.value.errorMessage!!.contains("automatic login failed"))
     }
 }
