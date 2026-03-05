@@ -1,99 +1,105 @@
 package com.wilove.vaulten.ui.signup
 
+import com.wilove.vaulten.domain.repository.AuthRepository
+import io.mockk.coEvery
+import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SignupViewModelTest {
 
+    private val testDispatcher = StandardTestDispatcher()
+    private lateinit var authRepository: AuthRepository
+    private lateinit var viewModel: SignupViewModel
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        authRepository = mockk()
+        viewModel = SignupViewModel(authRepository)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
     @Test
-    fun `onSignupClick returns false when email is blank`() {
-        val viewModel = SignupViewModel()
+    fun `onSignupClick shows error when full name is blank`() {
+        viewModel.onFullNameChange("")
+        var successCalled = false
+        
+        viewModel.onSignupClick { successCalled = true }
 
-        val result = viewModel.onSignupClick()
-
-        assertFalse(result)
+        assertFalse(successCalled)
         assertEquals("Full name is required.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
-    fun `onSignupClick returns false when full name is blank`() {
-        val viewModel = SignupViewModel()
-        viewModel.onEmailChange("user@example.com")
-        viewModel.onPasswordChange("password123")
-        viewModel.onConfirmPasswordChange("password123")
+    fun `onSignupClick shows error when email is blank`() {
+        viewModel.onFullNameChange("User Name")
+        viewModel.onEmailChange("")
+        var successCalled = false
 
-        val result = viewModel.onSignupClick()
+        viewModel.onSignupClick { successCalled = true }
 
-        assertFalse(result)
-        assertEquals("Full name is required.", viewModel.uiState.value.errorMessage)
+        assertFalse(successCalled)
+        assertEquals("Email is required.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
-    fun `onSignupClick returns false when email is invalid`() {
-        val viewModel = SignupViewModel()
+    fun `onSignupClick shows error when email is invalid`() {
         viewModel.onFullNameChange("User Name")
         viewModel.onEmailChange("not-an-email")
-        viewModel.onPasswordChange("password123")
-        viewModel.onConfirmPasswordChange("password123")
+        var successCalled = false
 
-        val result = viewModel.onSignupClick()
+        viewModel.onSignupClick { successCalled = true }
 
-        assertFalse(result)
+        assertFalse(successCalled)
         assertEquals("Enter a valid email address.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
-    fun `onSignupClick returns false when password is blank`() {
-        val viewModel = SignupViewModel()
-        viewModel.onFullNameChange("User Name")
-        viewModel.onEmailChange("user@example.com")
-
-        val result = viewModel.onSignupClick()
-
-        assertFalse(result)
-        assertEquals("Master password is required.", viewModel.uiState.value.errorMessage)
-    }
-
-    @Test
-    fun `onSignupClick returns false when confirm password is blank`() {
-        val viewModel = SignupViewModel()
-        viewModel.onFullNameChange("User Name")
-        viewModel.onEmailChange("user@example.com")
-        viewModel.onPasswordChange("password123")
-
-        val result = viewModel.onSignupClick()
-
-        assertFalse(result)
-        assertEquals("Confirm your password.", viewModel.uiState.value.errorMessage)
-    }
-
-    @Test
-    fun `onSignupClick returns false when passwords do not match`() {
-        val viewModel = SignupViewModel()
+    fun `onSignupClick shows error when passwords do not match`() {
         viewModel.onFullNameChange("User Name")
         viewModel.onEmailChange("user@example.com")
         viewModel.onPasswordChange("password123")
         viewModel.onConfirmPasswordChange("password456")
+        var successCalled = false
 
-        val result = viewModel.onSignupClick()
+        viewModel.onSignupClick { successCalled = true }
 
-        assertFalse(result)
+        assertFalse(successCalled)
         assertEquals("Passwords do not match.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
-    fun `onSignupClick returns true when inputs are valid`() {
-        val viewModel = SignupViewModel()
+    fun `onSignupClick calls repository register when inputs are valid`() = runTest(testDispatcher) {
         viewModel.onFullNameChange("User Name")
         viewModel.onEmailChange("user@example.com")
         viewModel.onPasswordChange("password123")
         viewModel.onConfirmPasswordChange("password123")
-
-        val result = viewModel.onSignupClick()
-
-        assertTrue(result)
+        coEvery { authRepository.register(any(), any(), any()) } returns Result.success(Unit)
+        
+        var successCalled = false
+        viewModel.onSignupClick { successCalled = true }
+        
         assertTrue(viewModel.uiState.value.isLoading)
+        advanceUntilIdle()
+
+        assertTrue(successCalled)
+        assertFalse(viewModel.uiState.value.isLoading)
     }
 }

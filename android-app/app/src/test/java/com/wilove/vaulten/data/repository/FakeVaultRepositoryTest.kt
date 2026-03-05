@@ -2,6 +2,7 @@ package com.wilove.vaulten.data.repository
 
 import com.wilove.vaulten.domain.model.AlertSeverity
 import com.wilove.vaulten.domain.model.Credential
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -26,7 +27,7 @@ class FakeVaultRepositoryTest {
     @Test
     fun `getRecentCredentials returns limited credentials sorted by lastModified`() = runTest {
         // When
-        val result = repository.getRecentCredentials(limit = 3)
+        val result = repository.getRecentCredentials(limit = 3).first()
 
         // Then
         assertEquals(3, result.size)
@@ -39,8 +40,8 @@ class FakeVaultRepositoryTest {
     @Test
     fun `getRecentCredentials respects limit parameter`() = runTest {
         // When
-        val result1 = repository.getRecentCredentials(limit = 2)
-        val result2 = repository.getRecentCredentials(limit = 10)
+        val result1 = repository.getRecentCredentials(limit = 2).first()
+        val result2 = repository.getRecentCredentials(limit = 10).first()
 
         // Then
         assertEquals(2, result1.size)
@@ -61,7 +62,7 @@ class FakeVaultRepositoryTest {
     @Test
     fun `getAllCredentials returns all mock credentials`() = runTest {
         // When
-        val result = repository.getAllCredentials()
+        val result = repository.getAllCredentials().first()
 
         // Then
         assertEquals(5, result.size)
@@ -134,12 +135,12 @@ class FakeVaultRepositoryTest {
     @Test
     fun `deleteCredential removes credential`() = runTest {
         // Given
-        val initialCount = repository.getAllCredentials().size
+        val initialCount = repository.getAllCredentials().first().size
 
         // When
         repository.deleteCredential("1")
         val result = repository.getCredentialById("1")
-        val finalCount = repository.getAllCredentials().size
+        val finalCount = repository.getAllCredentials().first().size
 
         // Then
         assertNull(result)
@@ -149,11 +150,11 @@ class FakeVaultRepositoryTest {
     @Test
     fun `deleteCredential with non-existent id does not throw`() = runTest {
         // Given
-        val initialCount = repository.getAllCredentials().size
+        val initialCount = repository.getAllCredentials().first().size
 
         // When
         repository.deleteCredential("non_existent")
-        val finalCount = repository.getAllCredentials().size
+        val finalCount = repository.getAllCredentials().first().size
 
         // Then
         assertEquals(initialCount, finalCount)

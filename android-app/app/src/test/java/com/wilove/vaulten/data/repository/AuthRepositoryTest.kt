@@ -6,7 +6,6 @@ import com.wilove.vaulten.data.remote.model.LoginRequest
 import com.wilove.vaulten.data.local.TokenManager
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
@@ -20,22 +19,23 @@ class AuthRepositoryTest {
 
     private lateinit var authApiService: AuthApiService
     private lateinit var tokenManager: TokenManager
-    private lateinit var repository: AuthRepository
+    private lateinit var repository: AuthRepositoryImpl
 
     @Before
     fun setup() {
         authApiService = mockk()
         tokenManager = mockk(relaxed = true)
-        repository = AuthRepository(authApiService, tokenManager)
+        repository = AuthRepositoryImpl(authApiService, tokenManager)
     }
 
     @Test
     fun `login success saves token and returns result`() = runTest {
-        val loginRequest = LoginRequest("user", "pass")
+        val username = "user"
+        val password = "pass"
         val token = "jwt-token"
-        coEvery { authApiService.login(loginRequest) } returns Response.success(AuthResponse(token))
+        coEvery { authApiService.login(any()) } returns Response.success(AuthResponse(token))
 
-        val result = repository.login(loginRequest)
+        val result = repository.login(username, password)
 
         assertTrue(result.isSuccess)
         assertEquals(token, result.getOrNull())
@@ -44,10 +44,11 @@ class AuthRepositoryTest {
 
     @Test
     fun `login failure returns failure result`() = runTest {
-        val loginRequest = LoginRequest("user", "pass")
-        coEvery { authApiService.login(loginRequest) } returns Response.error(401, mockk(relaxed = true))
+        val username = "user"
+        val password = "pass"
+        coEvery { authApiService.login(any()) } returns Response.error(401, mockk(relaxed = true))
 
-        val result = repository.login(loginRequest)
+        val result = repository.login(username, password)
 
         assertTrue(result.isFailure)
         coVerify(exactly = 0) { tokenManager.saveToken(any()) }

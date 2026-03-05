@@ -1,12 +1,14 @@
 package com.wilove.vaulten.data.repository
 
+import com.wilove.vaulten.data.local.dao.VaultDao
 import com.wilove.vaulten.data.remote.VaultApiService
 import com.wilove.vaulten.data.remote.model.*
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
@@ -14,33 +16,34 @@ import retrofit2.Response
 class VaultRepositoryTest {
 
     private lateinit var apiService: VaultApiService
-    private lateinit var repository: VaultRepository
+    private lateinit var vaultDao: VaultDao
+    private lateinit var repository: VaultRepositoryImpl
 
     @Before
     fun setup() {
         apiService = mockk()
-        repository = VaultRepository(apiService)
+        vaultDao = mockk(relaxed = true)
+        repository = VaultRepositoryImpl(apiService, vaultDao)
     }
 
     @Test
-    fun `getEntries success returns list`() = runTest {
-        val entries = listOf(mockk<VaultEntryResponse>(relaxed = true))
-        coEvery { apiService.getEntries() } returns Response.success(entries)
+    fun `getAllCredentials returns flow from dao`() = runTest {
+        val entities = emptyList<com.wilove.vaulten.data.local.VaultEntity>()
+        coEvery { vaultDao.getAllCredentials() } returns flowOf(entities)
 
-        val result = repository.getEntries()
+        val result = repository.getAllCredentials().first()
 
-        assertTrue(result.isSuccess)
-        assertEquals(entries, result.getOrNull())
+        assertEquals(0, result.size)
     }
 
     @Test
-    fun `sync success returns SyncResponse`() = runTest {
-        val syncResponse = SyncResponse(emptyList(), "2024-02-08T16:10:00")
-        coEvery { apiService.sync(any()) } returns Response.success(syncResponse)
+    fun `sync success updates local cache`() = runTest {
+        val remoteEntries = emptyList<VaultEntryResponse>()
+        coEvery { apiService.getEntries() } returns Response.success(remoteEntries)
 
-        val result = repository.sync("2024-02-08T10:00:00")
+        repository.sync()
 
-        assertTrue(result.isSuccess)
-        assertEquals(syncResponse, result.getOrNull())
+        io.mockk.verify { vaultDao.clearAll() }
+        io.mockk.verify { vaultDao.insertCredentials(any()) }
     }
 }

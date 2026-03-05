@@ -2,56 +2,44 @@ package com.wilove.vaulten.domain.repository
 
 import com.wilove.vaulten.domain.model.Credential
 import com.wilove.vaulten.domain.model.SecurityAlert
+import kotlinx.coroutines.flow.Flow
 
 /**
- * Repository interface for vault operations.
- * Defines the contract for accessing and managing credentials and security data.
- *
- * This interface abstracts the data layer from the domain layer,
- * allowing for different implementations (mock, local database, remote API).
+ * Repository interface for managing vault entries.
  */
 interface VaultRepository {
     /**
-     * Retrieves the most recently accessed credentials.
-     *
-     * @param limit Maximum number of credentials to return
-     * @return List of recent credentials
+     * Retrieves recent credentials as a reactive stream.
      */
-    suspend fun getRecentCredentials(limit: Int = 5): List<Credential>
+    fun getRecentCredentials(limit: Int): Flow<List<Credential>>
 
     /**
-     * Retrieves all active security alerts.
-     *
-     * @return List of security alerts
+     * Retrieves all credentials as a reactive stream.
+     */
+    fun getAllCredentials(): Flow<List<Credential>>
+
+    /**
+     * Retrieves security alerts.
      */
     suspend fun getSecurityAlerts(): List<SecurityAlert>
 
     /**
-     * Retrieves all stored credentials.
-     *
-     * @return List of all credentials
-     */
-    suspend fun getAllCredentials(): List<Credential>
-
-    /**
-     * Retrieves a specific credential by ID.
-     *
-     * @param id Credential identifier
-     * @return The credential if found, null otherwise
+     * Retrieves a single credential by ID.
      */
     suspend fun getCredentialById(id: String): Credential?
 
     /**
-     * Saves or updates a credential.
-     *
-     * @param credential The credential to save
+     * Saves a credential (create or update).
      */
     suspend fun saveCredential(credential: Credential)
 
     /**
      * Deletes a credential.
-     *
-     * @param id Credential identifier
      */
     suspend fun deleteCredential(id: String)
+
+    /**
+     * Synchronizes local data with the remote server.
+     */
+    suspend fun sync()
 }

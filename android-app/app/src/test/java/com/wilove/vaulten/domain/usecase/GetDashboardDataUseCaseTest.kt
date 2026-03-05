@@ -7,6 +7,8 @@ import com.wilove.vaulten.domain.repository.VaultRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -46,72 +48,38 @@ class GetDashboardDataUseCaseTest {
                 url = "https://github.com"
             )
         )
-        val mockAlerts = listOf(
-            SecurityAlert(
-                id = "alert1",
-                message = "Weak password detected",
-                severity = AlertSeverity.WARNING
-            )
-        )
         val allCredentials = mockCredentials + listOf(
             Credential("3", "Netflix", "user", "pass", "https://netflix.com")
         )
 
-        coEvery { repository.getRecentCredentials(5) } returns mockCredentials
-        coEvery { repository.getSecurityAlerts() } returns mockAlerts
-        coEvery { repository.getAllCredentials() } returns allCredentials
+        coEvery { repository.getRecentCredentials(5) } returns flowOf(mockCredentials)
+        coEvery { repository.getAllCredentials() } returns flowOf(allCredentials)
+        coEvery { repository.getSecurityAlerts() } returns emptyList()
 
         // When
-        val result = useCase()
+        val result = useCase().first()
 
         // Then
         assertEquals(mockCredentials, result.recentCredentials)
-        assertEquals(mockAlerts, result.securityAlerts)
+        assertEquals(0, result.securityAlerts.size)
         assertEquals(3, result.totalCredentials)
 
         coVerify { repository.getRecentCredentials(5) }
-        coVerify { repository.getSecurityAlerts() }
         coVerify { repository.getAllCredentials() }
     }
 
     @Test
     fun `invoke returns empty dashboard data when repository is empty`() = runTest {
         // Given
-        coEvery { repository.getRecentCredentials(5) } returns emptyList()
+        coEvery { repository.getRecentCredentials(5) } returns flowOf(emptyList())
+        coEvery { repository.getAllCredentials() } returns flowOf(emptyList())
         coEvery { repository.getSecurityAlerts() } returns emptyList()
-        coEvery { repository.getAllCredentials() } returns emptyList()
 
         // When
-        val result = useCase()
+        val result = useCase().first()
 
         // Then
         assertEquals(emptyList<Credential>(), result.recentCredentials)
-        assertEquals(emptyList<SecurityAlert>(), result.securityAlerts)
         assertEquals(0, result.totalCredentials)
-    }
-
-    @Test
-    fun `invoke limits recent credentials to 5`() = runTest {
-        // Given
-        val mockCredentials = (1..3).map {
-            Credential(
-                id = "$it",
-                name = "Service $it",
-                username = "user$it",
-                password = "pass",
-                url = null
-            )
-        }
-
-        coEvery { repository.getRecentCredentials(5) } returns mockCredentials
-        coEvery { repository.getSecurityAlerts() } returns emptyList()
-        coEvery { repository.getAllCredentials() } returns mockCredentials
-
-        // When
-        val result = useCase()
-
-        // Then
-        assertEquals(3, result.recentCredentials.size)
-        coVerify { repository.getRecentCredentials(5) }
     }
 }

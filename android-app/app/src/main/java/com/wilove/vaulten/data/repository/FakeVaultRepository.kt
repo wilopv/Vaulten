@@ -5,12 +5,12 @@ import com.wilove.vaulten.domain.model.Credential
 import com.wilove.vaulten.domain.model.SecurityAlert
 import com.wilove.vaulten.domain.repository.VaultRepository
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Fake implementation of [VaultRepository] for testing and development.
  * Provides mock data without requiring a real backend or database.
- *
- * This implementation simulates network delays and provides realistic test data.
  */
 class FakeVaultRepository : VaultRepository {
     private val mockCredentials = mutableListOf(
@@ -69,30 +69,26 @@ class FakeVaultRepository : VaultRepository {
         )
     )
 
-    override suspend fun getRecentCredentials(limit: Int): List<Credential> {
-        delay(300) // Simulate network delay
-        return mockCredentials
-            .sortedByDescending { it.lastModified }
-            .take(limit)
+    override fun getRecentCredentials(limit: Int): Flow<List<Credential>> = flow {
+        emit(mockCredentials.sortedByDescending { it.lastModified }.take(limit))
+    }
+
+    override fun getAllCredentials(): Flow<List<Credential>> = flow {
+        emit(mockCredentials.toList())
     }
 
     override suspend fun getSecurityAlerts(): List<SecurityAlert> {
-        delay(200) // Simulate network delay
+        delay(200)
         return mockAlerts
     }
 
-    override suspend fun getAllCredentials(): List<Credential> {
-        delay(300) // Simulate network delay
-        return mockCredentials.toList()
-    }
-
     override suspend fun getCredentialById(id: String): Credential? {
-        delay(200) // Simulate network delay
+        delay(200)
         return mockCredentials.find { it.id == id }
     }
 
     override suspend fun saveCredential(credential: Credential) {
-        delay(300) // Simulate network delay
+        delay(300)
         val index = mockCredentials.indexOfFirst { it.id == credential.id }
         if (index >= 0) {
             mockCredentials[index] = credential
@@ -102,7 +98,11 @@ class FakeVaultRepository : VaultRepository {
     }
 
     override suspend fun deleteCredential(id: String) {
-        delay(300) // Simulate network delay
+        delay(300)
         mockCredentials.removeIf { it.id == id }
+    }
+
+    override suspend fun sync() {
+        delay(500)
     }
 }
