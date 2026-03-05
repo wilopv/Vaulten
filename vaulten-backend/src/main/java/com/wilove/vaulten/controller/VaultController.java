@@ -1,6 +1,7 @@
 package com.wilove.vaulten.controller;
 
 import com.wilove.vaulten.dto.SyncResponse;
+import com.wilove.vaulten.dto.VaultEntryRequest;
 import com.wilove.vaulten.model.User;
 import com.wilove.vaulten.model.VaultEntry;
 import com.wilove.vaulten.service.VaultService;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Vault", description = "Vault entry management endpoints")
 @SecurityRequirement(name = "bearerAuth")
+@Slf4j
 public class VaultController {
 
     private final VaultService vaultService;
@@ -52,7 +55,16 @@ public class VaultController {
 
     @PostMapping
     @Operation(summary = "Create a new vault entry")
-    public ResponseEntity<VaultEntry> createEntry(@Valid @RequestBody VaultEntry entry) {
+    public ResponseEntity<VaultEntry> createEntry(@Valid @RequestBody VaultEntryRequest request) {
+        VaultEntry entry = VaultEntry.builder()
+                .name(request.getName())
+                .username(request.getUsername())
+                .password(request.getPassword())
+                .url(request.getUrl())
+                .notes(request.getNotes())
+                .type(request.getType())
+                .category(request.getCategory())
+                .build();
         return ResponseEntity.ok(vaultService.createEntry(entry, getCurrentUser()));
     }
 
@@ -64,7 +76,17 @@ public class VaultController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing vault entry")
-    public ResponseEntity<VaultEntry> updateEntry(@PathVariable Long id, @Valid @RequestBody VaultEntry entry) {
+    public ResponseEntity<VaultEntry> updateEntry(@PathVariable Long id,
+            @Valid @RequestBody VaultEntryRequest request) {
+        VaultEntry entry = VaultEntry.builder()
+                .name(request.getName())
+                .username(request.getUsername())
+                .password(request.getPassword())
+                .url(request.getUrl())
+                .notes(request.getNotes())
+                .type(request.getType())
+                .category(request.getCategory())
+                .build();
         return ResponseEntity.ok(vaultService.updateEntry(id, entry, getCurrentUser()));
     }
 
@@ -80,9 +102,6 @@ public class VaultController {
         if (authentication != null && authentication.getPrincipal() instanceof User) {
             return (User) authentication.getPrincipal();
         }
-        // This case is for tests where SecurityContext might be empty or mock
-        // In real execution, the JWT filter ensures a User is present for protected
-        // paths
         return null;
     }
 }
