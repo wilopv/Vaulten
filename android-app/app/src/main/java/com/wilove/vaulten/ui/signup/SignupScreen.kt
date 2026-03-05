@@ -7,13 +7,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -38,110 +46,133 @@ fun SignupScreen(
     onLoginClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Create Vault",
+                        modifier = Modifier.testTag(SignupTestTags.Title)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onLoginClick) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        },
         modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text(
-            text = "Create Vault",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.testTag(SignupTestTags.Title)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Sign up to start protecting your credentials.",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = uiState.fullName,
-            onValueChange = onFullNameChange,
-            label = { Text(text = "Full name") },
-            singleLine = true,
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .testTag(SignupTestTags.FullNameField)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = uiState.email,
-            onValueChange = onEmailChange,
-            label = { Text(text = "Email") },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(SignupTestTags.EmailField)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = uiState.masterPassword,
-            onValueChange = onPasswordChange,
-            label = { Text(text = "Master password") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(SignupTestTags.PasswordField)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = uiState.confirmPassword,
-            onValueChange = onConfirmPasswordChange,
-            label = { Text(text = "Confirm password") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(SignupTestTags.ConfirmPasswordField)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (uiState.errorMessage != null) {
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Top
+        ) {
             Text(
-                text = uiState.errorMessage,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(SignupTestTags.ErrorText)
+                text = "Join Vaulten",
+                style = MaterialTheme.typography.headlineSmall
             )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
-        val signupEnabled = !uiState.isLoading
-
-        Button(
-            onClick = onSignupClick,
-            enabled = signupEnabled,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(SignupTestTags.SignupButton)
-        ) {
-            Text(text = if (uiState.isLoading) "Creating..." else "Create account")
-        }
-
-        TextButton(
-            onClick = onLoginClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(SignupTestTags.LoginButton)
-        ) {
-            Text(text = "Already have an account? Sign in")
-        }
-
-        if (uiState.isLoading) {
-            Spacer(modifier = Modifier.height(12.dp))
-            CircularProgressIndicator(
-                modifier = Modifier.testTag(SignupTestTags.Loading)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Sign up to start protecting your credentials.",
+                style = MaterialTheme.typography.bodyMedium
             )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = uiState.fullName,
+                onValueChange = onFullNameChange,
+                label = { Text(text = "Full name") },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(SignupTestTags.FullNameField)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = onEmailChange,
+                label = { Text(text = "Email") },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(SignupTestTags.EmailField)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = uiState.masterPassword,
+                onValueChange = onPasswordChange,
+                label = { Text(text = "Master password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(SignupTestTags.PasswordField)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = uiState.confirmPassword,
+                onValueChange = onConfirmPasswordChange,
+                label = { Text(text = "Confirm password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(SignupTestTags.ConfirmPasswordField)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (uiState.errorMessage != null) {
+                Text(
+                    text = uiState.errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag(SignupTestTags.ErrorText)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            val signupEnabled = !uiState.isLoading
+
+            Button(
+                onClick = onSignupClick,
+                enabled = signupEnabled,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(SignupTestTags.SignupButton)
+            ) {
+                Text(text = if (uiState.isLoading) "Creating..." else "Create account")
+            }
+
+            TextButton(
+                onClick = onLoginClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(SignupTestTags.LoginButton)
+            ) {
+                Text(text = "Already have an account? Sign in")
+            }
+
+            if (uiState.isLoading) {
+                Spacer(modifier = Modifier.height(12.dp))
+                CircularProgressIndicator(
+                    modifier = Modifier.testTag(SignupTestTags.Loading)
+                )
+            }
         }
     }
 }

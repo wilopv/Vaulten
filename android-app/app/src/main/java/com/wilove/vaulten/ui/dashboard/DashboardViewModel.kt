@@ -6,14 +6,13 @@ import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel for the Dashboard screen.
- * Manages dashboard state and coordinates data loading through use cases.
- *
- * @property getDashboardDataUseCase Use case for fetching dashboard data
+ * ViewModel for the Dashboard.
+ * Observes reactive dashboard data and handles background synchronization.
  */
 class DashboardViewModel(
     private val getDashboardDataUseCase: GetDashboardDataUseCase
@@ -23,41 +22,43 @@ class DashboardViewModel(
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
-        loadDashboardData()
+        observeDashboardData()
+        refreshDashboard()
     }
 
     /**
-     * Loads dashboard data from the repository via the use case.
-     * Updates UI state with loading, success, or error states.
+     * Observes the reactive flow of dashboard data from local persistence.
      */
-    fun loadDashboardData() {
+    private fun observeDashboardData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                val dashboardData = getDashboardDataUseCase()
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        dashboardData = dashboardData,
-                        errorMessage = null
-                    )
+            _uiState.update { it.copy(isLoading = true) }
+            getDashboardDataUseCase()
+                .catch { e ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Failed to load dashboard: ${e.message}"
-                    )
+                .collect { data ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            dashboardData = data,
+                            errorMessage = null
+                        )
+                    }
                 }
-            }
         }
     }
 
     /**
-     * Refreshes the dashboard data.
-     * Can be called by pull-to-refresh or manual refresh actions.
+     * Triggers a remote synchronization in the background.
      */
-    fun refresh() {
-        loadDashboardData()
+    fun refreshDashboard() {
+        viewModelScope.launch {
+            try {
+                getDashboardDataUseCase.sync()
+            } catch (e: Exception) {
+                // Background sync failure doesn't necessarily block UI since we have local data
+                // But we could report it if it's a persistent issue.
+            }
+        }
     }
 }

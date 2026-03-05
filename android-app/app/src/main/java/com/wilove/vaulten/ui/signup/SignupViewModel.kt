@@ -16,7 +16,14 @@ import kotlinx.coroutines.launch
 class SignupViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SignupUiState())
+    private val _uiState = MutableStateFlow(
+        SignupUiState(
+            fullName = "Usuario Uno",
+            email = "usuario1@correo.com",
+            masterPassword = "password123",
+            confirmPassword = "password123"
+        )
+    )
     val uiState: StateFlow<SignupUiState> = _uiState.asStateFlow()
 
     /** Updates the email field as the user types. */

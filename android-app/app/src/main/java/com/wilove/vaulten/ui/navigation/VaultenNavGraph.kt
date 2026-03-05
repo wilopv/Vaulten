@@ -25,6 +25,9 @@ import com.wilove.vaulten.ui.credentials.CredentialsListScreen
 import com.wilove.vaulten.ui.credentials.CredentialsListViewModel
 import com.wilove.vaulten.ui.dashboard.DashboardScreen
 import com.wilove.vaulten.ui.dashboard.DashboardViewModel
+import androidx.room.Room
+import com.wilove.vaulten.data.local.VaultDatabase
+import com.wilove.vaulten.data.local.TokenManager
 import com.wilove.vaulten.ui.login.LoginScreen
 import com.wilove.vaulten.ui.login.LoginViewModel
 import com.wilove.vaulten.ui.passwordgenerator.PasswordGeneratorScreen
@@ -51,24 +54,38 @@ fun VaultenNavGraph(
     val context = androidx.compose.ui.platform.LocalContext.current
     
     // Create real repository and use case instances via manual DI
-    val tokenManager = NetworkModule.provideTokenManager(context)
-    val okHttpClient = NetworkModule.provideOkHttpClient(tokenManager)
+    val tokenManager = androidx.compose.runtime.remember { NetworkModule.provideTokenManager(context) }
+    val okHttpClient = androidx.compose.runtime.remember { NetworkModule.provideOkHttpClient(tokenManager) }
     
-    val authRepository = com.wilove.vaulten.data.repository.AuthRepositoryImpl(
-        NetworkModule.provideAuthApiService(okHttpClient),
-        tokenManager
-    )
+    val authRepository = androidx.compose.runtime.remember {
+        com.wilove.vaulten.data.repository.AuthRepositoryImpl(
+            NetworkModule.provideAuthApiService(okHttpClient),
+            tokenManager
+        )
+    }
     
-    val vaultRepository = com.wilove.vaulten.data.repository.VaultRepositoryImpl(
-        NetworkModule.provideVaultApiService(okHttpClient)
-    )
+    val vaultDatabase = androidx.compose.runtime.remember {
+        Room.databaseBuilder(
+            context,
+            VaultDatabase::class.java,
+            "vaulten-db"
+        ).build()
+    }
+    val vaultDao = androidx.compose.runtime.remember { vaultDatabase.vaultDao() }
+
+    val vaultRepository = androidx.compose.runtime.remember {
+        com.wilove.vaulten.data.repository.VaultRepositoryImpl(
+            NetworkModule.provideVaultApiService(okHttpClient),
+            vaultDao
+        )
+    }
     
-    val getDashboardDataUseCase = GetDashboardDataUseCase(vaultRepository)
-    val getAllCredentialsUseCase = GetAllCredentialsUseCase(vaultRepository)
-    val getCredentialByIdUseCase = GetCredentialByIdUseCase(vaultRepository)
-    val createCredentialUseCase = CreateCredentialUseCase(vaultRepository)
-    val updateCredentialUseCase = UpdateCredentialUseCase(vaultRepository)
-    val generatePasswordUseCase = GeneratePasswordUseCase()
+    val getDashboardDataUseCase = androidx.compose.runtime.remember { GetDashboardDataUseCase(vaultRepository) }
+    val getAllCredentialsUseCase = androidx.compose.runtime.remember { GetAllCredentialsUseCase(vaultRepository) }
+    val getCredentialByIdUseCase = androidx.compose.runtime.remember { GetCredentialByIdUseCase(vaultRepository) }
+    val createCredentialUseCase = androidx.compose.runtime.remember { CreateCredentialUseCase(vaultRepository) }
+    val updateCredentialUseCase = androidx.compose.runtime.remember { UpdateCredentialUseCase(vaultRepository) }
+    val generatePasswordUseCase = androidx.compose.runtime.remember { GeneratePasswordUseCase() }
 
     NavHost(
         navController = navController,
@@ -146,7 +163,13 @@ fun VaultenNavGraph(
                 onViewAllClick = {
                     navController.navigate(VaultenDestinations.CREDENTIALS_LIST)
                 },
-                onRefresh = viewModel::refresh
+                onRefresh = viewModel::refreshDashboard,
+                onLogoutClick = {
+                    // Navigate to login and clear stack
+                    navController.navigate(VaultenDestinations.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -165,6 +188,9 @@ fun VaultenNavGraph(
                 },
                 onAddCredentialClick = {
                     navController.navigate(VaultenDestinations.ADD_CREDENTIAL)
+                },
+                onBackClick = {
+                    navController.popBackStack()
                 },
                 onRefresh = viewModel::refresh
             )
@@ -241,14 +267,6 @@ fun VaultenNavGraph(
                     navController.navigate(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL)
                 }
             )
-
-            // Navigate back when saved
-            if (uiState.savedSuccessfully) {
-                androidx.compose.runtime.LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(500)
-                    navController.popBackStack()
-                }
-            }
         }
 
         // Edit Credential Screen
@@ -299,14 +317,6 @@ fun VaultenNavGraph(
                     navController.navigate(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL)
                 }
             )
-
-            // Navigate back when saved
-            if (uiState.savedSuccessfully) {
-                androidx.compose.runtime.LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(500)
-                    navController.popBackStack()
-                }
-            }
         }
 
         // Password Generator Screen (standalone)

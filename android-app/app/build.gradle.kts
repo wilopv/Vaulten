@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.secrets.gradle.plugin)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -76,4 +77,9 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.timber)
     implementation(libs.androidx.security.crypto)
+
+    // Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 }

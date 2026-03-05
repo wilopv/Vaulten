@@ -7,12 +7,13 @@ import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
  * ViewModel for the Credentials List screen.
- * Manages credential data and search filtering.
+ * Observes credentials from local storage and handles search filtering.
  */
 class CredentialsListViewModel(
     private val getAllCredentialsUseCase: GetAllCredentialsUseCase
@@ -23,7 +24,24 @@ class CredentialsListViewModel(
     private var cachedCredentials: List<Credential> = emptyList()
 
     init {
-        loadCredentials()
+        observeCredentials()
+    }
+
+    /**
+     * Observes the reactive flow of credentials.
+     */
+    private fun observeCredentials() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            getAllCredentialsUseCase()
+                .catch { e ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+                }
+                .collect { credentials ->
+                    cachedCredentials = credentials
+                    applyFilter(_uiState.value.searchQuery, credentials, isLoading = false)
+                }
+        }
     }
 
     /** Updates the search query and filters the list. */
@@ -32,28 +50,10 @@ class CredentialsListViewModel(
         applyFilter(query, cachedCredentials)
     }
 
-    /** Loads all credentials from the repository. */
-    fun loadCredentials() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                val credentials = getAllCredentialsUseCase()
-                cachedCredentials = credentials
-                applyFilter(_uiState.value.searchQuery, credentials, isLoading = false)
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Failed to load credentials: ${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    /** Refreshes the credentials list. */
+    /** Manual refresh (if needed, but Flow handles auto-updates). */
     fun refresh() {
-        loadCredentials()
+        // Since we are using Flow, updates happen automatically from Room.
+        // If we wanted to force a remote sync, we'd need a SyncUseCase.
     }
 
     private fun applyFilter(

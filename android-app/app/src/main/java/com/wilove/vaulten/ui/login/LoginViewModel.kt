@@ -16,7 +16,12 @@ import kotlinx.coroutines.launch
 class LoginViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(LoginUiState())
+    private val _uiState = MutableStateFlow(
+        LoginUiState(
+            email = "usuario1@correo.com",
+            masterPassword = "password123"
+        )
+    )
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     /** Updates the password field as the user types. */
@@ -69,6 +74,14 @@ class LoginViewModel(
                 _uiState.update { it.copy(errorMessage = e.message ?: "Authentication failed") }
             }
         }
+    }
+
+    /**
+     * Clears authentication data and resets UI state.
+     */
+    fun logout() {
+        authRepository.logout()
+        _uiState.update { LoginUiState() }
     }
 
     private companion object {
