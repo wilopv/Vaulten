@@ -3,10 +3,13 @@ package com.wilove.vaulten.ui.credentials
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.usecase.DeleteCredentialUseCase
+import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
+import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -16,7 +19,9 @@ import kotlinx.coroutines.launch
  */
 class CredentialDetailViewModel(
     private val getCredentialByIdUseCase: GetCredentialByIdUseCase,
-    private val deleteCredentialUseCase: DeleteCredentialUseCase
+    private val deleteCredentialUseCase: DeleteCredentialUseCase,
+    private val getAllCredentialsUseCase: GetAllCredentialsUseCase,
+    private val passwordHealthUseCase: PasswordHealthUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CredentialDetailUiState())
     val uiState: StateFlow<CredentialDetailUiState> = _uiState.asStateFlow()
@@ -25,14 +30,18 @@ class CredentialDetailViewModel(
     val navigateBack: StateFlow<Boolean> = _navigateBack.asStateFlow()
 
     /**
-     * Loads a credential by its ID.
+     * Loads a credential by its ID and evaluates its password health.
      */
     fun loadCredential(credentialId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val credential = getCredentialByIdUseCase(credentialId)
-                _uiState.update { it.copy(credential = credential, isLoading = false) }
+                val allCredentials = getAllCredentialsUseCase().first()
+                val health = passwordHealthUseCase(allCredentials)[credentialId]
+                _uiState.update {
+                    it.copy(credential = credential, isLoading = false, passwordHealth = health)
+                }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(

@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -18,7 +20,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -35,6 +40,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.wilove.vaulten.domain.model.Credential
+import com.wilove.vaulten.domain.model.PasswordHealthStatus
+import com.wilove.vaulten.domain.model.PasswordWeakness
 import com.wilove.vaulten.ui.theme.VaultenTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -113,6 +120,7 @@ fun CredentialDetailScreen(
                     credential = uiState.credential,
                     passwordVisible = uiState.passwordVisible,
                     copiedField = uiState.copiedField,
+                    passwordHealth = uiState.passwordHealth,
                     onCopyField = onCopyField,
                     onTogglePasswordVisibility = onTogglePasswordVisibility,
                     onEditClick = onEditClick,
@@ -178,6 +186,7 @@ private fun CredentialDetailContent(
     credential: Credential,
     passwordVisible: Boolean,
     copiedField: String?,
+    passwordHealth: PasswordHealthStatus?,
     onCopyField: (String, String) -> Unit,
     onTogglePasswordVisibility: () -> Unit,
     onEditClick: () -> Unit,
@@ -238,7 +247,63 @@ private fun CredentialDetailContent(
             testTag = CredentialDetailTestTags.LastModifiedField,
             copyable = false
         )
+
+        // Password health warnings
+        if (passwordHealth?.hasIssues == true) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (passwordHealth.isDuplicate) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Filled.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Esta contraseña se usa en otra credencial",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                    passwordHealth.weaknesses.forEach { weakness ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Filled.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = weakness.toDisplayString(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
+}
+
+private fun PasswordWeakness.toDisplayString(): String = when (this) {
+    PasswordWeakness.TOO_SHORT -> "Menos de 8 caracteres"
+    PasswordWeakness.NO_UPPERCASE -> "Sin letras mayúsculas"
+    PasswordWeakness.NO_LOWERCASE -> "Sin letras minúsculas"
+    PasswordWeakness.NO_DIGIT -> "Sin números"
+    PasswordWeakness.NO_SPECIAL_CHAR -> "Sin caracteres especiales"
 }
 
 @Composable

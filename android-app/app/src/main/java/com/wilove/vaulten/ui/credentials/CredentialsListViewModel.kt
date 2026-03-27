@@ -3,7 +3,9 @@ package com.wilove.vaulten.ui.credentials
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.model.Credential
+import com.wilove.vaulten.domain.model.PasswordHealthStatus
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
+import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,12 +18,14 @@ import kotlinx.coroutines.launch
  * Observes credentials from local storage and handles search filtering.
  */
 class CredentialsListViewModel(
-    private val getAllCredentialsUseCase: GetAllCredentialsUseCase
+    private val getAllCredentialsUseCase: GetAllCredentialsUseCase,
+    private val passwordHealthUseCase: PasswordHealthUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CredentialsListUiState())
     val uiState: StateFlow<CredentialsListUiState> = _uiState.asStateFlow()
 
     private var cachedCredentials: List<Credential> = emptyList()
+    private var cachedHealth: Map<String, PasswordHealthStatus> = emptyMap()
 
     init {
         observeCredentials()
@@ -39,7 +43,8 @@ class CredentialsListViewModel(
                 }
                 .collect { credentials ->
                     cachedCredentials = credentials
-                    applyFilter(_uiState.value.searchQuery, credentials, isLoading = false)
+                    cachedHealth = passwordHealthUseCase(credentials)
+                    applyFilter(_uiState.value.searchQuery, isLoading = false)
                 }
         }
     }
@@ -47,7 +52,7 @@ class CredentialsListViewModel(
     /** Updates the search query and filters the list. */
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
-        applyFilter(query, cachedCredentials)
+        applyFilter(query)
     }
 
     /** Manual refresh (if needed, but Flow handles auto-updates). */
@@ -58,14 +63,13 @@ class CredentialsListViewModel(
 
     private fun applyFilter(
         query: String,
-        credentials: List<Credential>,
         isLoading: Boolean = _uiState.value.isLoading
     ) {
         val trimmedQuery = query.trim()
         val filtered = if (trimmedQuery.isBlank()) {
-            credentials
+            cachedCredentials
         } else {
-            credentials.filter { credential ->
+            cachedCredentials.filter { credential ->
                 credential.name.contains(trimmedQuery, ignoreCase = true) ||
                     credential.username.contains(trimmedQuery, ignoreCase = true) ||
                     (credential.url?.contains(trimmedQuery, ignoreCase = true) == true)
@@ -74,6 +78,7 @@ class CredentialsListViewModel(
         _uiState.update {
             it.copy(
                 credentials = filtered,
+                passwordHealth = cachedHealth,
                 isLoading = isLoading,
                 errorMessage = null
             )

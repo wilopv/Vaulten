@@ -17,6 +17,7 @@ import com.wilove.vaulten.domain.usecase.GeneratePasswordUseCase
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
 import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
+import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
 import com.wilove.vaulten.domain.usecase.UpdateCredentialUseCase
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialScreen
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialViewModel
@@ -87,6 +88,7 @@ fun VaultenNavGraph(
     val createCredentialUseCase = androidx.compose.runtime.remember { CreateCredentialUseCase(vaultRepository) }
     val updateCredentialUseCase = androidx.compose.runtime.remember { UpdateCredentialUseCase(vaultRepository) }
     val deleteCredentialUseCase = androidx.compose.runtime.remember { DeleteCredentialUseCase(vaultRepository) }
+    val passwordHealthUseCase = androidx.compose.runtime.remember { PasswordHealthUseCase() }
     val generatePasswordUseCase = androidx.compose.runtime.remember { GeneratePasswordUseCase() }
 
     NavHost(
@@ -198,7 +200,7 @@ fun VaultenNavGraph(
         // Credentials List Screen
         composable(VaultenDestinations.CREDENTIALS_LIST) {
             val viewModel: CredentialsListViewModel = viewModel(
-                factory = CredentialsListViewModelFactory(getAllCredentialsUseCase)
+                factory = CredentialsListViewModelFactory(getAllCredentialsUseCase, passwordHealthUseCase)
             )
             val uiState by viewModel.uiState.collectAsState()
 
@@ -229,7 +231,7 @@ fun VaultenNavGraph(
         composable(VaultenDestinations.CREDENTIAL_DETAIL) { backStackEntry ->
             val credentialId = backStackEntry.arguments?.getString("credentialId") ?: return@composable
             val viewModel: CredentialDetailViewModel = viewModel(
-                factory = CredentialDetailViewModelFactory(getCredentialByIdUseCase, deleteCredentialUseCase)
+                factory = CredentialDetailViewModelFactory(getCredentialByIdUseCase, deleteCredentialUseCase, getAllCredentialsUseCase, passwordHealthUseCase)
             )
             val uiState by viewModel.uiState.collectAsState()
             val navigateBack by viewModel.navigateBack.collectAsState()
