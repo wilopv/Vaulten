@@ -26,6 +26,40 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".service.VaultenAutofillService"
+            android:label="Vaulten"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.autofill"
+                android:resource="@xml/autofill_service_config" />
+        </service>
+
+        <!-- Android 14+ CredentialManager provider (for Chrome, Instagram, etc.) -->
+        <service
+            android:name=".service.VaultenCredentialProviderService"
+            android:label="Vaulten"
+            android:exported="true"
+            android:permission="android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.credentials.CredentialProviderService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.credentials.provider"
+                android:resource="@xml/credential_provider_config" />
+        </service>
+
+        <!-- Transparent Activity that returns selected credential to CredentialManager -->
+        <activity
+            android:name=".ui.credential.CredentialFillActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
     </application>
 
-</manifest>
+</manifest>

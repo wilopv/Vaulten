@@ -39,6 +39,9 @@ local.properties
 # Kotlin
 .kotlin/
 
+# Android studio temp files
+temp_src/
+
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
 .cxx/
@@ -81,3 +84,5 @@ lint/tmp/
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+context/

@@ -18,18 +18,28 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.AutofillType
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.wilove.vaulten.ui.theme.VaultenTheme
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.autofill.AutofillNode
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalAutofill
+import androidx.compose.ui.platform.LocalAutofillTree
 
 /**
  * Stateless Login UI. Renders purely from [LoginUiState] and forwards user events
  * via the provided callbacks.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun LoginScreen(
     uiState: LoginUiState,
@@ -59,17 +69,44 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(24.dp))
 
+        val autofill = LocalAutofill.current
+        val autofillTree = LocalAutofillTree.current
+
+        // Email autofill wiring
+        val emailAutofillNode = AutofillNode(
+            autofillTypes = listOf(AutofillType.EmailAddress, AutofillType.Username),
+            onFill = onEmailChange
+        )
+        autofillTree += emailAutofillNode
+
         OutlinedTextField(
             value = uiState.email,
             onValueChange = onEmailChange,
             label = { Text(text = "Email") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(LoginTestTags.EmailField)
+                .onGloballyPositioned {
+                    emailAutofillNode.boundingBox = it.boundsInWindow()
+                }
+                .onFocusChanged {
+                    autofill?.run {
+                        if (it.isFocused) requestAutofillForNode(emailAutofillNode)
+                        else cancelAutofillForNode(emailAutofillNode)
+                    }
+                }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
+
+        // Password autofill wiring
+        val passwordAutofillNode = AutofillNode(
+            autofillTypes = listOf(AutofillType.Password),
+            onFill = onPasswordChange
+        )
+        autofillTree += passwordAutofillNode
 
         OutlinedTextField(
             value = uiState.masterPassword,
@@ -80,6 +117,15 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(LoginTestTags.PasswordField)
+                .onGloballyPositioned {
+                    passwordAutofillNode.boundingBox = it.boundsInWindow()
+                }
+                .onFocusChanged {
+                    autofill?.run {
+                        if (it.isFocused) requestAutofillForNode(passwordAutofillNode)
+                        else cancelAutofillForNode(passwordAutofillNode)
+                    }
+                }
         )
 
         Spacer(modifier = Modifier.height(12.dp))

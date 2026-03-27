@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,6 +48,7 @@ fun DashboardScreen(
     onViewAllClick: () -> Unit,
     onRefresh: () -> Unit,
     onLogoutClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -59,6 +61,12 @@ fun DashboardScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
                     IconButton(onClick = onLogoutClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
@@ -302,7 +310,8 @@ private fun DashboardScreenPreview() {
             onAddCredentialClick = {},
             onViewAllClick = {},
             onRefresh = {},
-            onLogoutClick = {}
+            onLogoutClick = {},
+            onSettingsClick = {}
         )
     }
 }

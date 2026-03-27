@@ -28,6 +28,9 @@ import com.wilove.vaulten.ui.dashboard.DashboardViewModel
 import androidx.room.Room
 import com.wilove.vaulten.data.local.VaultDatabase
 import com.wilove.vaulten.data.local.TokenManager
+import com.wilove.vaulten.ui.settings.SettingsScreen
+import com.wilove.vaulten.ui.settings.SettingsViewModel
+import com.wilove.vaulten.ui.settings.SettingsViewModelFactory
 import com.wilove.vaulten.ui.login.LoginScreen
 import com.wilove.vaulten.ui.login.LoginViewModel
 import com.wilove.vaulten.ui.passwordgenerator.PasswordGeneratorScreen
@@ -48,7 +51,8 @@ import com.wilove.vaulten.ui.signup.SignupViewModel
 fun VaultenNavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = VaultenDestinations.LOGIN
+    startDestination: String = VaultenDestinations.LOGIN,
+    initialSearchQuery: String? = null
 ) {
     // Get context for TokenManager
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -65,11 +69,7 @@ fun VaultenNavGraph(
     }
     
     val vaultDatabase = androidx.compose.runtime.remember {
-        Room.databaseBuilder(
-            context,
-            VaultDatabase::class.java,
-            "vaulten-db"
-        ).build()
+        VaultDatabase.getInstance(context)
     }
     val vaultDao = androidx.compose.runtime.remember { vaultDatabase.vaultDao() }
 
@@ -169,7 +169,27 @@ fun VaultenNavGraph(
                     navController.navigate(VaultenDestinations.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onSettingsClick = {
+                    navController.navigate(VaultenDestinations.SETTINGS)
                 }
+            )
+        }
+
+        // Settings Screen
+        composable(VaultenDestinations.SETTINGS) {
+            val viewModel: SettingsViewModel = viewModel(
+                factory = SettingsViewModelFactory(context.applicationContext)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            // Intent launching is handled inside SettingsScreen via LocalContext.current,
+            // which is the live Activity context — no wrapper, no launcher, no flags needed.
+            SettingsScreen(
+                uiState = uiState,
+                onBackClick = { navController.popBackStack() },
+                onEnableAutofillClick = {},
+                onCheckStatus = viewModel::checkAutofillStatus
             )
         }
 
@@ -179,6 +199,13 @@ fun VaultenNavGraph(
                 factory = CredentialsListViewModelFactory(getAllCredentialsUseCase)
             )
             val uiState by viewModel.uiState.collectAsState()
+
+            // Pre-fill the search box when launched from the autofill fallback
+            androidx.compose.runtime.LaunchedEffect(initialSearchQuery) {
+                if (!initialSearchQuery.isNullOrEmpty()) {
+                    viewModel.onSearchQueryChange(initialSearchQuery)
+                }
+            }
 
             CredentialsListScreen(
                 uiState = uiState,

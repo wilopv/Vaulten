@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<autofill-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:supportsInlineSuggestions="true">
+    <!--
+        Chrome 137+ dropped compatibility mode in favor of native Android Autofill.
+        Compatibility entries for Chrome are limited to versions before 137 to avoid
+        stability issues. Version code ~13600000000000 covers Chrome ≤ 136.
+        On Chrome 137+, native autofill works without any compatibility entry.
+    -->
+    <compatibility-package android:name="com.google.android.chrome" android:maxLongVersionCode="13600000000000" />
+    <compatibility-package android:name="com.android.chrome" android:maxLongVersionCode="13600000000000" />
+    <compatibility-package android:name="com.chrome.beta" android:maxLongVersionCode="13600000000000" />
+    <compatibility-package android:name="com.chrome.dev" android:maxLongVersionCode="13600000000000" />
+    <!-- Firefox -->
+    <compatibility-package android:name="org.mozilla.firefox" android:maxLongVersionCode="9999999999999" />
+    <!-- Firefox Focus -->
+    <compatibility-package android:name="org.mozilla.focus" android:maxLongVersionCode="9999999999999" />
+    <!-- Samsung Internet -->
+    <compatibility-package android:name="com.sec.android.app.sbrowser" android:maxLongVersionCode="9999999999999" />
+    <!-- System WebView -->
+    <compatibility-package android:name="com.google.android.webview" android:maxLongVersionCode="9999999999999" />
+    <compatibility-package android:name="com.android.webview" android:maxLongVersionCode="9999999999999" />
+</autofill-service>

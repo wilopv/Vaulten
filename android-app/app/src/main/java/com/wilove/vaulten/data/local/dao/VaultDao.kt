@@ -18,6 +18,9 @@ interface VaultDao {
     @Query("SELECT * FROM vault_entries WHERE id = :id")
     suspend fun getCredentialById(id: String): VaultEntity?
 
+    @Query("SELECT * FROM vault_entries WHERE url LIKE '%' || :query || '%' OR name LIKE '%' || :query || '%'")
+    suspend fun searchCredentials(query: String): List<VaultEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCredentials(credentials: List<VaultEntity>)
 
