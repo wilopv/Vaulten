@@ -2,6 +2,7 @@ package com.wilove.vaulten.ui.credentials
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wilove.vaulten.domain.usecase.DeleteCredentialUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,10 +15,14 @@ import kotlinx.coroutines.launch
  * Manages loading and displaying a single credential.
  */
 class CredentialDetailViewModel(
-    private val getCredentialByIdUseCase: GetCredentialByIdUseCase
+    private val getCredentialByIdUseCase: GetCredentialByIdUseCase,
+    private val deleteCredentialUseCase: DeleteCredentialUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CredentialDetailUiState())
     val uiState: StateFlow<CredentialDetailUiState> = _uiState.asStateFlow()
+
+    private val _navigateBack = MutableStateFlow(false)
+    val navigateBack: StateFlow<Boolean> = _navigateBack.asStateFlow()
 
     /**
      * Loads a credential by its ID.
@@ -33,6 +38,27 @@ class CredentialDetailViewModel(
                     it.copy(
                         isLoading = false,
                         errorMessage = "Failed to load credential: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Deletes the credential and emits navigateBack when successful.
+     */
+    fun deleteCredential(credentialId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDeleting = true, deleteError = null) }
+            try {
+                deleteCredentialUseCase(credentialId)
+                _uiState.update { it.copy(isDeleting = false) }
+                _navigateBack.value = true
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isDeleting = false,
+                        deleteError = "Failed to delete credential: ${e.message}"
                     )
                 }
             }

@@ -12,6 +12,7 @@ import com.wilove.vaulten.data.repository.AuthRepositoryImpl
 import com.wilove.vaulten.data.repository.VaultRepositoryImpl
 import com.wilove.vaulten.di.NetworkModule
 import com.wilove.vaulten.domain.usecase.CreateCredentialUseCase
+import com.wilove.vaulten.domain.usecase.DeleteCredentialUseCase
 import com.wilove.vaulten.domain.usecase.GeneratePasswordUseCase
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
@@ -85,6 +86,7 @@ fun VaultenNavGraph(
     val getCredentialByIdUseCase = androidx.compose.runtime.remember { GetCredentialByIdUseCase(vaultRepository) }
     val createCredentialUseCase = androidx.compose.runtime.remember { CreateCredentialUseCase(vaultRepository) }
     val updateCredentialUseCase = androidx.compose.runtime.remember { UpdateCredentialUseCase(vaultRepository) }
+    val deleteCredentialUseCase = androidx.compose.runtime.remember { DeleteCredentialUseCase(vaultRepository) }
     val generatePasswordUseCase = androidx.compose.runtime.remember { GeneratePasswordUseCase() }
 
     NavHost(
@@ -227,13 +229,21 @@ fun VaultenNavGraph(
         composable(VaultenDestinations.CREDENTIAL_DETAIL) { backStackEntry ->
             val credentialId = backStackEntry.arguments?.getString("credentialId") ?: return@composable
             val viewModel: CredentialDetailViewModel = viewModel(
-                factory = CredentialDetailViewModelFactory(getCredentialByIdUseCase)
+                factory = CredentialDetailViewModelFactory(getCredentialByIdUseCase, deleteCredentialUseCase)
             )
             val uiState by viewModel.uiState.collectAsState()
+            val navigateBack by viewModel.navigateBack.collectAsState()
 
             // Load credential when screen is first shown
             androidx.compose.runtime.LaunchedEffect(credentialId) {
                 viewModel.loadCredential(credentialId)
+            }
+
+            // Navigate back when delete is successful
+            androidx.compose.runtime.LaunchedEffect(navigateBack) {
+                if (navigateBack) {
+                    navController.popBackStack()
+                }
             }
 
             CredentialDetailScreen(
@@ -245,8 +255,7 @@ fun VaultenNavGraph(
                     navController.navigate(VaultenDestinations.editCredential(credentialId))
                 },
                 onDeleteClick = {
-                    // TODO: Implement delete credential
-                    navController.popBackStack()
+                    viewModel.deleteCredential(credentialId)
                 },
                 onCopyField = { fieldName, fieldValue ->
                     // TODO: Implement copy to clipboard

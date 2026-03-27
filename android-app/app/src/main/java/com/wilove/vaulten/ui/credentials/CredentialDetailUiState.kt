@@ -10,5 +10,7 @@ data class CredentialDetailUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val passwordVisible: Boolean = false,
-    val copiedField: String? = null
+    val copiedField: String? = null,
+    val isDeleting: Boolean = false,
+    val deleteError: String? = null
 )
