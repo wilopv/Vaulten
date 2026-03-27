@@ -34,7 +34,7 @@ object NetworkModule {
      */
     fun provideOkHttpClient(tokenManager: TokenManager): OkHttpClient {
         val logging = HttpLoggingInterceptor { message -> Log.d("OkHttp", message) }
-        logging.level = HttpLoggingInterceptor.Level.BODY
+        logging.level = HttpLoggingInterceptor.Level.NONE
 
         return OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor(tokenManager))

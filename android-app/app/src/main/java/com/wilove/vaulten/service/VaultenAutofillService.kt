@@ -3,8 +3,6 @@ package com.wilove.vaulten.service
 import android.app.assist.AssistStructure
 import android.os.Build
 import android.os.CancellationSignal
-import android.os.Handler
-import android.os.Looper
 import android.service.autofill.AutofillService
 import android.service.autofill.Dataset
 import android.service.autofill.FillCallback
@@ -18,7 +16,6 @@ import android.util.Log
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import com.wilove.vaulten.MainActivity
 import com.wilove.vaulten.R
@@ -44,23 +41,6 @@ class VaultenAutofillService : AutofillService() {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private fun toast(msg: String) {
-        Handler(Looper.getMainLooper()).post {
-            Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG).show()
-        }
-        Log.d(TAG, msg)
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        toast("VaultenAutofillService: onCreate ✅")
-    }
-
-    override fun onConnected() {
-        super.onConnected()
-        toast("VaultenAutofillService: onConnected ✅ (Android bound the service)")
-    }
-
     override fun onDisconnected() {
         super.onDisconnected()
         Log.d(TAG, "onDisconnected")
@@ -73,23 +53,18 @@ class VaultenAutofillService : AutofillService() {
         cancellationSignal: CancellationSignal,
         callback: FillCallback
     ) {
-        toast("onFillRequest called")
-
         val structure = request.fillContexts.lastOrNull()?.structure
         if (structure == null) {
-            toast("structure is null – aborting")
             callback.onSuccess(null)
             return
         }
 
         val packageName = structure.activityComponent?.packageName ?: "unknown"
-        toast("Package: $packageName")
 
         scope.launch {
             try {
                 // 1. Walk the view tree
                 val parsed = parseStructure(structure)
-                toast("Domain=${parsed.webDomain}  userField=${parsed.usernameId != null}  passField=${parsed.passwordId != null}")
 
                 // No autofill-able fields found → nothing to do
                 if (parsed.usernameId == null && parsed.passwordId == null) {
@@ -107,7 +82,6 @@ class VaultenAutofillService : AutofillService() {
 
                 if (parsed.webDomain != null) {
                     fallbackSearchQuery = parsed.webDomain
-                    toast("Browser flow, querying: $fallbackSearchQuery")
                     var found = dao.searchCredentials(parsed.webDomain)
                     if (found.isEmpty()) {
                         found = dao.searchCredentials(packageName)
@@ -116,7 +90,6 @@ class VaultenAutofillService : AutofillService() {
                 } else {
                     val keywords = extractKeywordsFromPackage(packageName)
                     fallbackSearchQuery = keywords.firstOrNull() ?: packageName
-                    toast("Native app flow, keywords: $keywords")
                     val found = mutableListOf<VaultEntity>()
                     val seenIds = mutableSetOf<String>()
                     for (keyword in keywords) {
@@ -129,8 +102,6 @@ class VaultenAutofillService : AutofillService() {
 
                 // 3. No credentials found → show "Buscar en Vaulten" fallback
                 if (results.isEmpty()) {
-                    toast("No credentials found – showing fallback")
-
                     // Route to credentials list if the user already has a session,
                     // otherwise send them to login.
                     val hasSession = try {
@@ -176,8 +147,6 @@ class VaultenAutofillService : AutofillService() {
                     return@launch
                 }
 
-                toast("Found ${results.size} credential(s)!")
-
                 // 4. Build fill response with the matching credentials
                 val responseBuilder = FillResponse.Builder()
 
@@ -210,7 +179,6 @@ class VaultenAutofillService : AutofillService() {
                 }
 
             } catch (e: Exception) {
-                toast("Error: ${e.message}")
                 Log.e(TAG, "Error in onFillRequest", e)
                 callback.onSuccess(null)
             }
@@ -314,14 +282,12 @@ class VaultenAutofillService : AutofillService() {
                 if (looksLikeUsername) {
                     usernameId = node.autofillId
                     Log.d(TAG, "Found Username field: id=${node.idEntry} hints=${node.autofillHints?.joinToString()}")
-                    toast("Campo usuario web detectado: ${node.idEntry}")
                 }
             }
 
             if (looksLikePassword && passwordId == null) {
                 passwordId = node.autofillId
                 Log.d(TAG, "Found Password field: id=${node.idEntry} hints=${node.autofillHints?.joinToString()}")
-                toast("Campo password web detectado: ${node.idEntry}")
             }
 
             for (i in 0 until node.childCount) {
