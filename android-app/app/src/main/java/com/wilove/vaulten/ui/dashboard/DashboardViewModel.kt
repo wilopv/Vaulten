@@ -18,7 +18,7 @@ class DashboardViewModel(
     private val getDashboardDataUseCase: GetDashboardDataUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(DashboardUiState())
+    private val _uiState = MutableStateFlow(DashboardUiState(isLoading = true))
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {

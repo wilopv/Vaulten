@@ -102,9 +102,9 @@ class SignupViewModelTest {
         assertTrue(viewModel.uiState.value.isLoading)
         advanceUntilIdle()
 
-        io.mockk.verify { authRepository.logout() }
-        io.mockk.verify { authRepository.register("User Name", "user@example.com", "password123") }
-        io.mockk.verify { authRepository.login("user@example.com", "password123") }
+        io.mockk.coVerify { authRepository.logout() }
+        io.mockk.coVerify { authRepository.register("User Name", "user@example.com", "password123") }
+        io.mockk.coVerify { authRepository.login("user@example.com", "password123") }
         
         assertTrue(successCalled)
         assertFalse(viewModel.uiState.value.isLoading)

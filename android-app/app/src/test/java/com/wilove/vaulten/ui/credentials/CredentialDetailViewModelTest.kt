@@ -1,12 +1,16 @@
 package com.wilove.vaulten.ui.credentials
 
 import com.wilove.vaulten.domain.model.Credential
+import com.wilove.vaulten.domain.usecase.DeleteCredentialUseCase
+import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
+import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -26,18 +30,30 @@ class CredentialDetailViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var getCredentialByIdUseCase: GetCredentialByIdUseCase
+    private lateinit var deleteCredentialUseCase: DeleteCredentialUseCase
+    private lateinit var getAllCredentialsUseCase: GetAllCredentialsUseCase
+    private val passwordHealthUseCase = PasswordHealthUseCase()
     private lateinit var viewModel: CredentialDetailViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         getCredentialByIdUseCase = mockk()
+        deleteCredentialUseCase = mockk()
+        getAllCredentialsUseCase = mockk()
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
     }
+
+    private fun buildViewModel() = CredentialDetailViewModel(
+        getCredentialByIdUseCase,
+        deleteCredentialUseCase,
+        getAllCredentialsUseCase,
+        passwordHealthUseCase
+    )
 
     @Test
     fun `loadCredential updates state with success`() = runTest(testDispatcher) {
@@ -49,8 +65,9 @@ class CredentialDetailViewModelTest {
             url = "https://gmail.com"
         )
         coEvery { getCredentialByIdUseCase("1") } returns credential
+        coEvery { getAllCredentialsUseCase() } returns flowOf(listOf(credential))
 
-        viewModel = CredentialDetailViewModel(getCredentialByIdUseCase)
+        viewModel = buildViewModel()
         viewModel.loadCredential("1")
         advanceUntilIdle()
 
@@ -66,7 +83,7 @@ class CredentialDetailViewModelTest {
     fun `loadCredential updates state with error`() = runTest(testDispatcher) {
         coEvery { getCredentialByIdUseCase("invalid") } throws Exception("Credential not found")
 
-        viewModel = CredentialDetailViewModel(getCredentialByIdUseCase)
+        viewModel = buildViewModel()
         viewModel.loadCredential("invalid")
         advanceUntilIdle()
 
@@ -86,8 +103,9 @@ class CredentialDetailViewModelTest {
             url = "https://gmail.com"
         )
         coEvery { getCredentialByIdUseCase("1") } returns credential
+        coEvery { getAllCredentialsUseCase() } returns flowOf(listOf(credential))
 
-        viewModel = CredentialDetailViewModel(getCredentialByIdUseCase)
+        viewModel = buildViewModel()
         viewModel.loadCredential("1")
         advanceUntilIdle()
 
@@ -108,15 +126,15 @@ class CredentialDetailViewModelTest {
             url = "https://gmail.com"
         )
         coEvery { getCredentialByIdUseCase("1") } returns credential
+        coEvery { getAllCredentialsUseCase() } returns flowOf(listOf(credential))
 
-        viewModel = CredentialDetailViewModel(getCredentialByIdUseCase)
+        viewModel = buildViewModel()
         viewModel.loadCredential("1")
         advanceUntilIdle()
 
         viewModel.markFieldAsCopied("username")
         assertEquals("username", viewModel.uiState.value.copiedField)
 
-        // Advance time to clear the copied field
         advanceUntilIdle()
         assertEquals(null, viewModel.uiState.value.copiedField)
     }

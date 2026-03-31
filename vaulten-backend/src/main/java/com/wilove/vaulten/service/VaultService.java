@@ -26,7 +26,9 @@ public class VaultService {
         log.debug("Creating vault entry: {} for user: {}", entry.getName(), user.getUsername());
         entry.setUser(user);
         encryptSensitiveFields(entry);
-        return vaultEntryRepository.save(entry);
+        VaultEntry saved = vaultEntryRepository.save(entry);
+        decryptSensitiveFields(saved);
+        return saved;
     }
 
     public List<VaultEntry> getEntriesForUser(User user) {
@@ -66,7 +68,9 @@ public class VaultService {
         existingEntry.setCategory(updatedEntry.getCategory());
 
         encryptSensitiveFields(existingEntry);
-        return vaultEntryRepository.save(existingEntry);
+        VaultEntry saved = vaultEntryRepository.save(existingEntry);
+        decryptSensitiveFields(saved);
+        return saved;
     }
 
     @Transactional

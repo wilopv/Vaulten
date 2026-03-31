@@ -60,8 +60,11 @@ class VaultRepositoryImpl(
         if (result.isSuccess) {
             val remoteEntry = result.getOrNull()
             if (remoteEntry != null) {
-                // Save to local cache with the ID provided by the server
-                vaultDao.insertCredential(remoteEntry.toDomain().toEntity())
+                // Use the server-assigned ID but keep the original plaintext password.
+                // Never trust the API response's password field — the backend may return
+                // an encrypted or transformed value depending on its implementation.
+                val serverAssignedId = remoteEntry.id.toString()
+                vaultDao.insertCredential(credential.copy(id = serverAssignedId).toEntity())
             }
         } else {
             throw result.exceptionOrNull() ?: Exception("Failed to save credential")

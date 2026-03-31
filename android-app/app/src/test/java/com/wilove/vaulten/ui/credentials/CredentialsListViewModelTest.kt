@@ -2,6 +2,7 @@ package com.wilove.vaulten.ui.credentials
 
 import com.wilove.vaulten.domain.model.Credential
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
+import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -25,6 +26,7 @@ class CredentialsListViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var getAllCredentialsUseCase: GetAllCredentialsUseCase
+    private val passwordHealthUseCase = PasswordHealthUseCase()
     private lateinit var viewModel: CredentialsListViewModel
 
     @Before
@@ -46,7 +48,7 @@ class CredentialsListViewModelTest {
         )
         coEvery { getAllCredentialsUseCase() } returns flowOf(credentials)
 
-        viewModel = CredentialsListViewModel(getAllCredentialsUseCase)
+        viewModel = CredentialsListViewModel(getAllCredentialsUseCase, passwordHealthUseCase)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -64,7 +66,7 @@ class CredentialsListViewModelTest {
         )
         coEvery { getAllCredentialsUseCase() } returns flowOf(credentials)
 
-        viewModel = CredentialsListViewModel(getAllCredentialsUseCase)
+        viewModel = CredentialsListViewModel(getAllCredentialsUseCase, passwordHealthUseCase)
         advanceUntilIdle()
 
         viewModel.onSearchQueryChange("git")

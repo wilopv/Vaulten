@@ -7,6 +7,7 @@ import com.wilove.vaulten.domain.usecase.UpdateCredentialUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -196,6 +197,33 @@ class CreateEditCredentialViewModelTest {
         assertEquals("password123", state.password)
         assertEquals("https://gmail.com", state.url)
         assertTrue(state.isEditMode)
+    }
+
+    @Test
+    fun `saveCredential passes exact typed password to use case`() = runTest(testDispatcher) {
+        // Verifica que el ViewModel entrega al use case exactamente la contraseña
+        // que el usuario escribió en el campo, sin modificarla.
+        val typedPassword = "MiContraseña123!"
+        val credentialSlot = slot<Credential>()
+        coEvery { createCredentialUseCase(capture(credentialSlot)) } returns Unit
+
+        viewModel = CreateEditCredentialViewModel(
+            createCredentialUseCase,
+            updateCredentialUseCase,
+            getCredentialByIdUseCase
+        )
+
+        viewModel.onNameChange("Gmail")
+        viewModel.onUsernameChange("user@gmail.com")
+        viewModel.onPasswordChange(typedPassword)
+        viewModel.saveCredential()
+        advanceUntilIdle()
+
+        assertEquals(
+            "El ViewModel debe pasar al use case exactamente la contraseña que escribió el usuario",
+            typedPassword,
+            credentialSlot.captured.password
+        )
     }
 
     @Test

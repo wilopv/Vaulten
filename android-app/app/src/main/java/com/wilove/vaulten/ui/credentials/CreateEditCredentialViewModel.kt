@@ -21,14 +21,7 @@ class CreateEditCredentialViewModel(
     private val updateCredentialUseCase: UpdateCredentialUseCase,
     private val getCredentialByIdUseCase: GetCredentialByIdUseCase? = null
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(
-        CreateEditCredentialUiState(
-            name = "Mi Cuenta de Prueba",
-            username = "student",
-            password = "Password123",
-            url = "https://practicetestautomation.com/practice-test-login/"
-        )
-    )
+    private val _uiState = MutableStateFlow(CreateEditCredentialUiState())
     val uiState: StateFlow<CreateEditCredentialUiState> = _uiState.asStateFlow()
 
     /**
