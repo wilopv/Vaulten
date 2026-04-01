@@ -23,4 +23,9 @@ interface AuthRepository {
      * Retrieves the current authentication token if available.
      */
     fun getLoggedToken(): String?
+
+    /**
+     * Changes the authenticated user's master password.
+     */
+    suspend fun changePassword(currentPassword: String, newPassword: String): Result<Unit>
 }

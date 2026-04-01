@@ -1,6 +1,7 @@
 package com.wilove.vaulten.data.repository
 
 import com.wilove.vaulten.data.remote.AuthApiService
+import com.wilove.vaulten.data.remote.model.ChangePasswordRequest
 import com.wilove.vaulten.data.remote.model.LoginRequest
 import com.wilove.vaulten.data.remote.model.RegisterRequest
 import com.wilove.vaulten.data.local.TokenManager
@@ -61,4 +62,22 @@ class AuthRepositoryImpl(
      * Returns the currently stored token if it exists.
      */
     override fun getLoggedToken(): String? = tokenManager.getToken()
+
+    /**
+     * Changes the authenticated user's master password.
+     */
+    override suspend fun changePassword(currentPassword: String, newPassword: String): Result<Unit> {
+        return try {
+            val response = authApiService.changePassword(
+                ChangePasswordRequest(currentPassword, newPassword)
+            )
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Change password failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

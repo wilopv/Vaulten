@@ -1,6 +1,7 @@
 package com.wilove.vaulten.data.remote
 
 import com.wilove.vaulten.data.remote.model.AuthResponse
+import com.wilove.vaulten.data.remote.model.ChangePasswordRequest
 import com.wilove.vaulten.data.remote.model.LoginRequest
 import com.wilove.vaulten.data.remote.model.RegisterRequest
 import retrofit2.Response
@@ -22,4 +23,10 @@ interface AuthApiService {
      */
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
+
+    /**
+     * Changes the authenticated user's master password.
+     */
+    @POST("api/user/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Response<Unit>
 }

@@ -28,3 +28,12 @@ data class RegisterRequest(
 data class AuthResponse(
     val token: String
 )
+
+/**
+ * Request model for changing the master password.
+ */
+@Serializable
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String
+)

@@ -32,7 +32,8 @@ fun SettingsScreen(
     uiState: SettingsUiState,
     onBackClick: () -> Unit,
     onEnableAutofillClick: () -> Unit, // kept for API compatibility; intent is now handled internally
-    onCheckStatus: () -> Unit
+    onCheckStatus: () -> Unit,
+    onChangePasswordClick: () -> Unit = {}
 ) {
     val ctx = LocalContext.current
 
@@ -151,6 +152,37 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Open Autofill Settings")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Seguridad",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Contraseña maestra",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Cambia la contraseña con la que accedes a Vaulten.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onChangePasswordClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cambiar contraseña")
                     }
                 }
             }
