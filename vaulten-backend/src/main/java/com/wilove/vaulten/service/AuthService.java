@@ -55,6 +55,32 @@ public class AuthService {
     }
 
     /**
+     * Issue a new token from a signature-valid but expired token.
+     */
+    public AuthResponse refreshToken(String expiredToken) {
+        String username = jwtService.extractUsernameIgnoreExpiry(expiredToken);
+        if (username == null) {
+            throw new InvalidCredentialsException("Invalid token");
+        }
+        String newToken = jwtService.generateToken(username);
+        return AuthResponse.builder()
+                .token(newToken)
+                .build();
+    }
+
+    /**
+     * Change the password for the given user.
+     * Validates the current password before updating.
+     */
+    public void changePassword(String currentPassword, String newPassword, User user) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new InvalidCredentialsException("Current password is incorrect");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    /**
      * Authenticate user and generate token
      */
     public AuthResponse login(LoginRequest request) {

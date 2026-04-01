@@ -63,6 +63,19 @@ public class JwtService {
     }
 
     /**
+     * Extract username from an expired (but signature-valid) token.
+     * ExpiredJwtException is thrown after signature validation, so catching it
+     * is safe — it means the signature is valid, only the expiry has passed.
+     */
+    public String extractUsernameIgnoreExpiry(String token) {
+        try {
+            return extractClaim(token, Claims::getSubject);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return e.getClaims().getSubject();
+        }
+    }
+
+    /**
      * Validate token against username
      */
     public Boolean validateToken(String token, String username) {
