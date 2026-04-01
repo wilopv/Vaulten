@@ -253,7 +253,9 @@ fun VaultenNavGraph(
                     navController.popBackStack()
                 },
                 onRefresh = viewModel::refresh,
-                onTrashClick = { navController.navigate(VaultenDestinations.TRASH) }
+                onTrashClick = { navController.navigate(VaultenDestinations.TRASH) },
+                onApplyFilter = viewModel::applyFilter,
+                onClearFilter = viewModel::clearFilter
             )
         }
 

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,11 +25,19 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,8 +45,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.wilove.vaulten.domain.model.Credential
+import com.wilove.vaulten.domain.model.CredentialFilter
 import com.wilove.vaulten.domain.model.PasswordHealthStatus
 import com.wilove.vaulten.ui.theme.VaultenTheme
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 /**
  * Stateless Credentials List UI. Renders purely from [CredentialsListUiState].
@@ -52,8 +65,37 @@ fun CredentialsListScreen(
     onBackClick: () -> Unit,
     onRefresh: () -> Unit,
     onTrashClick: () -> Unit = {},
+    onApplyFilter: (CredentialFilter) -> Unit = {},
+    onClearFilter: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    var showFilterSheet by remember { mutableStateOf(false) }
+
+    if (showFilterSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+            sheetState = sheetState
+        ) {
+            FilterBottomSheetContent(
+                currentFilter = uiState.activeFilter,
+                onApply = { filter ->
+                    onApplyFilter(filter)
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        showFilterSheet = false
+                    }
+                },
+                onClear = {
+                    onClearFilter()
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        showFilterSheet = false
+                    }
+                }
+            )
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,6 +115,16 @@ fun CredentialsListScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showFilterSheet = true }) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "Filtros",
+                            tint = if (uiState.isFilterActive)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(onClick = onTrashClick) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -249,6 +301,109 @@ private fun CredentialRow(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterBottomSheetContent(
+    currentFilter: CredentialFilter,
+    onApply: (CredentialFilter) -> Unit,
+    onClear: () -> Unit
+) {
+    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+
+    var domain by remember { mutableStateOf(currentFilter.domain ?: "") }
+    var afterText by remember {
+        mutableStateOf(currentFilter.modifiedAfter?.let { dateFormat.format(it) } ?: "")
+    }
+    var beforeText by remember {
+        mutableStateOf(currentFilter.modifiedBefore?.let { dateFormat.format(it) } ?: "")
+    }
+    var afterError by remember { mutableStateOf(false) }
+    var beforeError by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(top = 8.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "Filtros",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        OutlinedTextField(
+            value = domain,
+            onValueChange = { domain = it },
+            label = { Text("Dominio (ej. github.com)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = afterText,
+            onValueChange = {
+                afterText = it
+                afterError = false
+            },
+            label = { Text("Modificada después de (dd/MM/yyyy)") },
+            singleLine = true,
+            isError = afterError,
+            supportingText = if (afterError) ({ Text("Formato inválido") }) else null,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = beforeText,
+            onValueChange = {
+                beforeText = it
+                beforeError = false
+            },
+            label = { Text("Modificada antes de (dd/MM/yyyy)") },
+            singleLine = true,
+            isError = beforeError,
+            supportingText = if (beforeError) ({ Text("Formato inválido") }) else null,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onClear,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Limpiar")
+            }
+
+            Button(
+                onClick = {
+                    val after = afterText.trim().let { text ->
+                        if (text.isEmpty()) null
+                        else try { dateFormat.parse(text)?.time }
+                        catch (e: Exception) { afterError = true; return@Button }
+                    }
+                    val before = beforeText.trim().let { text ->
+                        if (text.isEmpty()) null
+                        else try { dateFormat.parse(text)?.time }
+                        catch (e: Exception) { beforeError = true; return@Button }
+                    }
+                    onApply(
+                        CredentialFilter(
+                            domain = domain.trim().ifBlank { null },
+                            modifiedAfter = after,
+                            modifiedBefore = before
+                        )
+                    )
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Aplicar")
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.wilove.vaulten.ui.credentials
 
 import com.wilove.vaulten.domain.model.Credential
+import com.wilove.vaulten.domain.model.CredentialFilter
 import com.wilove.vaulten.domain.model.PasswordHealthStatus
 
 /**
@@ -11,5 +12,8 @@ data class CredentialsListUiState(
     val searchQuery: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val passwordHealth: Map<String, PasswordHealthStatus> = emptyMap()
-)
+    val passwordHealth: Map<String, PasswordHealthStatus> = emptyMap(),
+    val activeFilter: CredentialFilter = CredentialFilter()
+) {
+    val isFilterActive: Boolean get() = activeFilter != CredentialFilter()
+}

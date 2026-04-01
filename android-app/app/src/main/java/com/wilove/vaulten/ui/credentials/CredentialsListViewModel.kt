@@ -3,6 +3,7 @@ package com.wilove.vaulten.ui.credentials
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.model.Credential
+import com.wilove.vaulten.domain.model.CredentialFilter
 import com.wilove.vaulten.domain.model.PasswordHealthStatus
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
@@ -44,15 +45,28 @@ class CredentialsListViewModel(
                 .collect { credentials ->
                     cachedCredentials = credentials
                     cachedHealth = passwordHealthUseCase(credentials)
-                    applyFilter(_uiState.value.searchQuery, isLoading = false)
+                    applyFilter(_uiState.value.searchQuery, _uiState.value.activeFilter, isLoading = false)
                 }
         }
     }
 
-    /** Updates the search query and filters the list. */
+    /** Updates the search query and re-applies all active filters. */
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
-        applyFilter(query)
+        applyFilter(query, _uiState.value.activeFilter)
+    }
+
+    /** Applies a new filter, keeping the current search query. */
+    fun applyFilter(filter: CredentialFilter) {
+        _uiState.update { it.copy(activeFilter = filter) }
+        applyFilter(_uiState.value.searchQuery, filter)
+    }
+
+    /** Resets the filter to default, keeping the current search query. */
+    fun clearFilter() {
+        val emptyFilter = CredentialFilter()
+        _uiState.update { it.copy(activeFilter = emptyFilter) }
+        applyFilter(_uiState.value.searchQuery, emptyFilter)
     }
 
     /** Manual refresh (if needed, but Flow handles auto-updates). */
@@ -63,17 +77,26 @@ class CredentialsListViewModel(
 
     private fun applyFilter(
         query: String,
+        filter: CredentialFilter,
         isLoading: Boolean = _uiState.value.isLoading
     ) {
         val trimmedQuery = query.trim()
-        val filtered = if (trimmedQuery.isBlank()) {
-            cachedCredentials
-        } else {
-            cachedCredentials.filter { credential ->
+        val filtered = cachedCredentials.filter { credential ->
+            val matchesQuery = trimmedQuery.isBlank() ||
                 credential.name.contains(trimmedQuery, ignoreCase = true) ||
-                    credential.username.contains(trimmedQuery, ignoreCase = true) ||
-                    (credential.url?.contains(trimmedQuery, ignoreCase = true) == true)
-            }
+                credential.username.contains(trimmedQuery, ignoreCase = true) ||
+                credential.url?.contains(trimmedQuery, ignoreCase = true) == true
+
+            val matchesDomain = filter.domain.isNullOrBlank() ||
+                credential.url?.contains(filter.domain, ignoreCase = true) == true
+
+            val matchesAfter = filter.modifiedAfter == null ||
+                credential.lastModified >= filter.modifiedAfter
+
+            val matchesBefore = filter.modifiedBefore == null ||
+                credential.lastModified <= filter.modifiedBefore
+
+            matchesQuery && matchesDomain && matchesAfter && matchesBefore
         }
         _uiState.update {
             it.copy(
