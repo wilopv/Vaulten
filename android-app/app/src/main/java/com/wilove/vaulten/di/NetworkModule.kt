@@ -18,7 +18,7 @@ import android.util.Log
  */
 object NetworkModule {
 
-    private const val BASE_URL: String = "http://192.168.1.213:8080/"
+    const val BASE_URL: String = "http://192.168.1.213:8080/"
     private val json = Json { ignoreUnknownKeys = true }
     private val contentType = "application/json".toMediaType()
 
@@ -37,7 +37,7 @@ object NetworkModule {
         logging.level = HttpLoggingInterceptor.Level.NONE
 
         return OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor(tokenManager))
+            .addInterceptor(AuthInterceptor(tokenManager, BASE_URL))
             .addInterceptor(logging)
             .build()
     }
