@@ -68,6 +68,7 @@ public class VaultService {
         existingEntry.setUsername(updatedEntry.getUsername());
         existingEntry.setPassword(updatedEntry.getPassword());
         existingEntry.setUrl(updatedEntry.getUrl());
+        existingEntry.setAndroidPackageName(updatedEntry.getAndroidPackageName());
         existingEntry.setNotes(updatedEntry.getNotes());
         existingEntry.setType(updatedEntry.getType());
         existingEntry.setCategory(updatedEntry.getCategory());

@@ -32,6 +32,8 @@ public class VaultEntry {
 
     private String url;
 
+    private String androidPackageName;
+
     @Column(columnDefinition = "TEXT")
     private String notes; // Will be stored encrypted
 

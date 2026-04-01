@@ -26,9 +26,12 @@ class CreateEditCredentialViewModel(
 
     /**
      * Initializes the screen for editing an existing credential.
+     * No-op if the credential is already loaded, so navigating back from sub-screens
+     * (e.g. AppPicker) doesn't overwrite in-progress edits.
      */
     fun loadCredentialForEditing(credentialId: String) {
         if (getCredentialByIdUseCase == null) return
+        if (_uiState.value.credentialId == credentialId) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -42,6 +45,7 @@ class CreateEditCredentialViewModel(
                             username = credential.username,
                             password = credential.password,
                             url = credential.url ?: "",
+                            androidPackageName = credential.androidPackageName,
                             isLoading = false,
                             isEditMode = true
                         )
@@ -87,6 +91,22 @@ class CreateEditCredentialViewModel(
     }
 
     /**
+     * Updates the associated Android app (package name + display label).
+     * Pass null for both to remove the association.
+     * If a new app is selected and the name field is blank, auto-fills it.
+     */
+    fun onAndroidPackageNameChange(packageName: String?, appLabel: String?) {
+        _uiState.update { state ->
+            val autoName = if (packageName != null && appLabel != null && state.name.isBlank()) {
+                "Credencial para $appLabel"
+            } else {
+                state.name
+            }
+            state.copy(androidPackageName = packageName, androidAppLabel = appLabel, name = autoName)
+        }
+    }
+
+    /**
      * Saves the credential (creates or updates depending on mode).
      */
     fun saveCredential() {
@@ -114,7 +134,8 @@ class CreateEditCredentialViewModel(
                     username = state.username,
                     password = state.password,
                     url = state.url.takeIf { it.isNotBlank() },
-                    lastModified = System.currentTimeMillis()
+                    lastModified = System.currentTimeMillis(),
+                    androidPackageName = state.androidPackageName
                 )
 
                 if (state.isEditMode && state.credentialId != null) {

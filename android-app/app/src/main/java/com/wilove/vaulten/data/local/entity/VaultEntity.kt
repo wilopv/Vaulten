@@ -13,5 +13,6 @@ data class VaultEntity(
     val url: String?,
     val lastModified: Long,
     val synced: Boolean = true,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val androidPackageName: String? = null
 )

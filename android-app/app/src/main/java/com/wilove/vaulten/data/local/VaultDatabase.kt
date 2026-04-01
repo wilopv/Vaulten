@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.wilove.vaulten.data.local.dao.VaultDao
 import com.wilove.vaulten.data.local.entity.VaultEntity
 
-@Database(entities = [VaultEntity::class], version = 2, exportSchema = false)
+@Database(entities = [VaultEntity::class], version = 3, exportSchema = false)
 abstract class VaultDatabase : RoomDatabase() {
     abstract fun vaultDao(): VaultDao
 
@@ -21,6 +21,12 @@ abstract class VaultDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE vault_entries ADD COLUMN androidPackageName TEXT DEFAULT NULL")
+            }
+        }
+
         fun getInstance(context: android.content.Context): VaultDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = androidx.room.Room.databaseBuilder(
@@ -28,7 +34,7 @@ abstract class VaultDatabase : RoomDatabase() {
                     VaultDatabase::class.java,
                     "vaulten-db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance

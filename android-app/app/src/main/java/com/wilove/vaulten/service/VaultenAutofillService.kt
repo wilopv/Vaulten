@@ -30,11 +30,6 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "VaultenAutofill"
 
-// Generic package name segments that carry no brand information.
-private val GENERIC_PACKAGE_SEGMENTS = setOf(
-    "com", "org", "net", "io", "android", "app", "mobile", "lite",
-    "go", "beta", "alpha", "debug", "test", "dev", "staging", "prod", "release"
-)
 
 @RequiresApi(Build.VERSION_CODES.O)
 class VaultenAutofillService : AutofillService() {
@@ -81,23 +76,13 @@ class VaultenAutofillService : AutofillService() {
                 val fallbackSearchQuery: String
 
                 if (parsed.webDomain != null) {
+                    // Browser: search by web domain
                     fallbackSearchQuery = parsed.webDomain
-                    var found = dao.searchCredentials(parsed.webDomain)
-                    if (found.isEmpty()) {
-                        found = dao.searchCredentials(packageName)
-                    }
-                    results = found
+                    results = dao.searchCredentials(parsed.webDomain)
                 } else {
-                    val keywords = extractKeywordsFromPackage(packageName)
-                    fallbackSearchQuery = keywords.firstOrNull() ?: packageName
-                    val found = mutableListOf<VaultEntity>()
-                    val seenIds = mutableSetOf<String>()
-                    for (keyword in keywords) {
-                        for (cred in dao.searchCredentials(keyword)) {
-                            if (seenIds.add(cred.id)) found.add(cred)
-                        }
-                    }
-                    results = found
+                    // Native app: exact androidPackageName match only
+                    fallbackSearchQuery = packageName
+                    results = dao.getCredentialsByPackageName(packageName)
                 }
 
                 // 3. No credentials found → show "Buscar en Vaulten" fallback
@@ -187,23 +172,6 @@ class VaultenAutofillService : AutofillService() {
 
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
         callback.onSuccess()
-    }
-
-    // ─── Package keyword extraction ────────────────────────────────────────
-
-    /**
-     * Extracts brand-relevant keywords from an Android package name.
-     *
-     * Splits by "." and filters out generic segments (com, org, android, etc.)
-     * so that "com.instagram.android" becomes ["instagram"].
-     *
-     * The results are used to search local credentials by url/name, enabling
-     * matching between native app package names and stored credential URLs.
-     */
-    private fun extractKeywordsFromPackage(packageName: String): List<String> {
-        return packageName.split(".")
-            .filter { it.isNotEmpty() && it !in GENERIC_PACKAGE_SEGMENTS }
-            .distinct()
     }
 
     // ─── Structure parsing ─────────────────────────────────────────────────

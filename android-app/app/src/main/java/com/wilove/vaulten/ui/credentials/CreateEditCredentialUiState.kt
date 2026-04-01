@@ -11,6 +11,8 @@ data class CreateEditCredentialUiState(
     val username: String = "",
     val password: String = "",
     val url: String = "",
+    val androidPackageName: String? = null,
+    val androidAppLabel: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val isSaving: Boolean = false,

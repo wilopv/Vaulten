@@ -7,6 +7,11 @@ import androidx.room.Query
 import com.wilove.vaulten.data.local.entity.VaultEntity
 import kotlinx.coroutines.flow.Flow
 
+data class PackageNameMapping(
+    val id: String,
+    val androidPackageName: String
+)
+
 @Dao
 interface VaultDao {
     @Query("SELECT * FROM vault_entries WHERE deletedAt IS NULL ORDER BY lastModified DESC")
@@ -23,6 +28,15 @@ interface VaultDao {
 
     @Query("SELECT * FROM vault_entries WHERE url LIKE '%' || :query || '%' OR name LIKE '%' || :query || '%'")
     suspend fun searchCredentials(query: String): List<VaultEntity>
+
+    @Query("SELECT * FROM vault_entries WHERE androidPackageName = :packageName AND deletedAt IS NULL")
+    suspend fun getCredentialsByPackageName(packageName: String): List<VaultEntity>
+
+    @Query("UPDATE vault_entries SET androidPackageName = :packageName WHERE id = :id")
+    suspend fun updateAndroidPackageName(id: String, packageName: String)
+
+    @Query("SELECT id, androidPackageName FROM vault_entries WHERE androidPackageName IS NOT NULL AND deletedAt IS NULL")
+    suspend fun getPackageNameMappings(): List<PackageNameMapping>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCredentials(credentials: List<VaultEntity>)

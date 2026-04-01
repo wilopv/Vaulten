@@ -47,6 +47,7 @@ class VaultRepositoryImpl(
             username = credential.username,
             password = credential.password,
             url = credential.url,
+            androidPackageName = credential.androidPackageName,
             type = VaultType.LOGIN,
             category = "General"
         )
@@ -109,6 +110,7 @@ class VaultRepositoryImpl(
     override suspend fun sync() {
         // Full sync: clear non-trashed entries and replace with remote data.
         // Trashed entries (deletedAt IS NOT NULL) are preserved by clearAll().
+        // androidPackageName is now persisted server-side, so no manual preservation needed.
         val result = handleApiCall { apiService.getEntries() }
         if (result.isSuccess) {
             val remoteEntries = result.getOrNull() ?: emptyList()

@@ -1,5 +1,7 @@
 package com.wilove.vaulten.ui.credentials
 
+import android.graphics.drawable.Drawable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,26 +10,35 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
 import com.wilove.vaulten.ui.theme.VaultenTheme
 
 /**
@@ -44,6 +55,8 @@ fun CreateEditCredentialScreen(
     onSaveClick: () -> Unit,
     onCancelClick: () -> Unit,
     onGeneratePasswordClick: () -> Unit = {},
+    onSelectAppClick: () -> Unit = {},
+    onAndroidPackageNameChange: (String?, String?) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -186,12 +199,72 @@ fun CreateEditCredentialScreen(
                     OutlinedTextField(
                         value = uiState.url,
                         onValueChange = onUrlChange,
-                        label = { Text("Website / App URL (optional)") },
+                        label = { Text("Website URL") },
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag(CreateEditCredentialTestTags.UrlField)
                     )
+
+                    // Associated Android app section
+                    val context = LocalContext.current
+                    val appIcon: Drawable? = remember(uiState.androidPackageName) {
+                        uiState.androidPackageName?.let { pkg ->
+                            try { context.packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
+                        }
+                    }
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Associated App",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        if (uiState.androidPackageName != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (appIcon != null) {
+                                        Image(
+                                            bitmap = appIcon.toBitmap(48, 48).asImageBitmap(),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                    } else {
+                                        androidx.compose.material3.Icon(
+                                            imageVector = Icons.Filled.Android,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(32.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = uiState.androidAppLabel ?: uiState.androidPackageName,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                TextButton(onClick = { onAndroidPackageNameChange(null, null) }) {
+                                    Text("Remove")
+                                }
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = onSelectAppClick,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = Icons.Filled.Android,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                Text("Select App")
+                            }
+                        }
+                    }
                 }
 
                 // Action buttons at the bottom

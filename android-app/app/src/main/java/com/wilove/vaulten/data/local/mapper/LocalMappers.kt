@@ -11,7 +11,8 @@ fun VaultEntity.toDomain(): Credential {
         password = password,
         url = url,
         lastModified = lastModified,
-        deletedAt = deletedAt
+        deletedAt = deletedAt,
+        androidPackageName = androidPackageName
     )
 }
 
@@ -23,7 +24,8 @@ fun Credential.toEntity(): VaultEntity {
         password = password,
         url = url,
         lastModified = lastModified,
-        deletedAt = deletedAt
+        deletedAt = deletedAt,
+        androidPackageName = androidPackageName
     )
 }
 

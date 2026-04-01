@@ -17,5 +17,6 @@ data class Credential(
     val password: String,
     val url: String? = null,
     val lastModified: Long = System.currentTimeMillis(),
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val androidPackageName: String? = null
 )

@@ -17,6 +17,7 @@ fun VaultEntryResponse.toDomain(): Credential {
         username = this.username ?: "",
         password = this.password ?: "",
         url = this.url,
+        androidPackageName = this.androidPackageName,
         lastModified = parseTimestamp(this.updatedAt)
     )
 }

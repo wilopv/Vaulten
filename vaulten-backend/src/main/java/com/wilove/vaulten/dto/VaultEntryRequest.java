@@ -26,6 +26,8 @@ public class VaultEntryRequest {
 
     private String url;
 
+    private String androidPackageName;
+
     private String notes;
 
     @NotNull(message = "Entry type is required")

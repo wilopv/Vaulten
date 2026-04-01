@@ -20,6 +20,7 @@ data class VaultEntryResponse(
     val username: String? = null,
     val password: String? = null,
     val url: String? = null,
+    val androidPackageName: String? = null,
     val notes: String? = null,
     val type: VaultType,
     val category: String,
@@ -36,6 +37,7 @@ data class VaultEntryRequest(
     val username: String? = null,
     val password: String? = null,
     val url: String? = null,
+    val androidPackageName: String? = null,
     val notes: String? = null,
     val type: VaultType,
     val category: String

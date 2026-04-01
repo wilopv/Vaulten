@@ -22,6 +22,9 @@ import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
 import com.wilove.vaulten.domain.usecase.PermanentlyDeleteCredentialUseCase
 import com.wilove.vaulten.domain.usecase.RestoreCredentialUseCase
 import com.wilove.vaulten.domain.usecase.UpdateCredentialUseCase
+import android.app.Application
+import com.wilove.vaulten.ui.credentials.AppPickerScreen
+import com.wilove.vaulten.ui.credentials.AppPickerViewModel
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialScreen
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialViewModel
 import com.wilove.vaulten.ui.credentials.CredentialDetailScreen
@@ -318,8 +321,23 @@ fun VaultenNavGraph(
             androidx.compose.runtime.LaunchedEffect(generatedPassword.value) {
                 generatedPassword.value?.let { password ->
                     viewModel.onPasswordChange(password)
-                    // Clear the saved state to avoid re-applying
                     backStackEntry.savedStateHandle.set<String?>("generatedPassword", null)
+                }
+            }
+
+            // Check if an app was selected from the picker
+            val selectedApp = backStackEntry
+                .savedStateHandle
+                .getStateFlow<String?>("selectedApp", null)
+                .collectAsState()
+
+            androidx.compose.runtime.LaunchedEffect(selectedApp.value) {
+                selectedApp.value?.let { value ->
+                    val parts = value.split("|", limit = 2)
+                    if (parts.size == 2) {
+                        viewModel.onAndroidPackageNameChange(parts[0], parts[1])
+                    }
+                    backStackEntry.savedStateHandle.set<String?>("selectedApp", null)
                 }
             }
 
@@ -330,12 +348,14 @@ fun VaultenNavGraph(
                 onPasswordChange = viewModel::onPasswordChange,
                 onUrlChange = viewModel::onUrlChange,
                 onSaveClick = viewModel::saveCredential,
-                onCancelClick = {
-                    navController.popBackStack()
-                },
+                onCancelClick = { navController.popBackStack() },
                 onGeneratePasswordClick = {
                     navController.navigate(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL)
-                }
+                },
+                onSelectAppClick = {
+                    navController.navigate(VaultenDestinations.APP_PICKER)
+                },
+                onAndroidPackageNameChange = viewModel::onAndroidPackageNameChange
             )
         }
 
@@ -373,6 +393,22 @@ fun VaultenNavGraph(
                 }
             }
 
+            // Check if an app was selected from the picker
+            val selectedApp = backStackEntry
+                .savedStateHandle
+                .getStateFlow<String?>("selectedApp", null)
+                .collectAsState()
+
+            androidx.compose.runtime.LaunchedEffect(selectedApp.value) {
+                selectedApp.value?.let { value ->
+                    val parts = value.split("|", limit = 2)
+                    if (parts.size == 2) {
+                        viewModel.onAndroidPackageNameChange(parts[0], parts[1])
+                    }
+                    backStackEntry.savedStateHandle.set<String?>("selectedApp", null)
+                }
+            }
+
             CreateEditCredentialScreen(
                 uiState = uiState,
                 onNameChange = viewModel::onNameChange,
@@ -380,12 +416,14 @@ fun VaultenNavGraph(
                 onPasswordChange = viewModel::onPasswordChange,
                 onUrlChange = viewModel::onUrlChange,
                 onSaveClick = viewModel::saveCredential,
-                onCancelClick = {
-                    navController.popBackStack()
-                },
+                onCancelClick = { navController.popBackStack() },
                 onGeneratePasswordClick = {
                     navController.navigate(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL)
-                }
+                },
+                onSelectAppClick = {
+                    navController.navigate(VaultenDestinations.APP_PICKER)
+                },
+                onAndroidPackageNameChange = viewModel::onAndroidPackageNameChange
             )
         }
 
@@ -492,6 +530,27 @@ fun VaultenNavGraph(
                 onBackClick = { navController.popBackStack() },
                 onRestore = viewModel::restore,
                 onPermanentlyDelete = viewModel::permanentlyDelete
+            )
+        }
+
+        // App Picker Screen
+        composable(VaultenDestinations.APP_PICKER) {
+            val viewModel: AppPickerViewModel = viewModel(
+                factory = AppPickerViewModelFactory(context.applicationContext as Application)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            AppPickerScreen(
+                uiState = uiState,
+                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onAppSelected = { packageName, appLabel ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        "selectedApp",
+                        "$packageName|$appLabel"
+                    )
+                    navController.popBackStack()
+                },
+                onBackClick = { navController.popBackStack() }
             )
         }
 
