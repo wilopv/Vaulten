@@ -44,7 +44,24 @@ class TokenManager(context: Context) {
         prefs.edit().remove(KEY_TOKEN).apply()
     }
 
+    /**
+     * Saves the timestamp (epoch ms) of the last user activity.
+     * Called when the app goes to background so the lock screen can decide
+     * whether to require re-authentication on next launch.
+     */
+    fun saveLastActiveTimestamp(timestampMs: Long) {
+        prefs.edit().putLong(KEY_LAST_ACTIVE, timestampMs).apply()
+    }
+
+    /**
+     * Returns the last saved activity timestamp, or 0 if never set.
+     */
+    fun getLastActiveTimestamp(): Long {
+        return prefs.getLong(KEY_LAST_ACTIVE, 0L)
+    }
+
     companion object {
         private const val KEY_TOKEN = "jwt_token"
+        private const val KEY_LAST_ACTIVE = "last_active_timestamp"
     }
 }

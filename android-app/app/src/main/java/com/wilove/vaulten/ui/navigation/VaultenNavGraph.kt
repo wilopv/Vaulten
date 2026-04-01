@@ -30,6 +30,11 @@ import com.wilove.vaulten.ui.dashboard.DashboardViewModel
 import androidx.room.Room
 import com.wilove.vaulten.data.local.VaultDatabase
 import com.wilove.vaulten.data.local.TokenManager
+import com.wilove.vaulten.data.local.SessionManager
+import com.wilove.vaulten.ui.lock.LockScreen
+import com.wilove.vaulten.ui.lock.LockViewModel
+import com.wilove.vaulten.ui.settings.ChangePasswordScreen
+import com.wilove.vaulten.ui.settings.ChangePasswordViewModel
 import com.wilove.vaulten.ui.settings.SettingsScreen
 import com.wilove.vaulten.ui.settings.SettingsViewModel
 import com.wilove.vaulten.ui.settings.SettingsViewModelFactory
@@ -58,9 +63,24 @@ fun VaultenNavGraph(
 ) {
     // Get context for TokenManager
     val context = androidx.compose.ui.platform.LocalContext.current
-    
+
     // Create real repository and use case instances via manual DI
     val tokenManager = androidx.compose.runtime.remember { NetworkModule.provideTokenManager(context) }
+
+    // Determine the effective start destination accounting for existing session and lock state.
+    val effectiveStartDestination = androidx.compose.runtime.remember {
+        when {
+            // Autofill or other external override takes priority
+            startDestination != VaultenDestinations.LOGIN -> startDestination
+            // No token → show login
+            tokenManager.getToken() == null -> VaultenDestinations.LOGIN
+            // Token exists but session timed out → show lock screen
+            SessionManager.isLockRequired(tokenManager.getLastActiveTimestamp()) ->
+                VaultenDestinations.LOCK
+            // Token exists and session is active → go straight to dashboard
+            else -> VaultenDestinations.DASHBOARD
+        }
+    }
     val okHttpClient = androidx.compose.runtime.remember { NetworkModule.provideOkHttpClient(tokenManager) }
     
     val authRepository = androidx.compose.runtime.remember {
@@ -93,7 +113,7 @@ fun VaultenNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = effectiveStartDestination,
         modifier = modifier
     ) {
         // Login Screen
@@ -193,7 +213,8 @@ fun VaultenNavGraph(
                 uiState = uiState,
                 onBackClick = { navController.popBackStack() },
                 onEnableAutofillClick = {},
-                onCheckStatus = viewModel::checkAutofillStatus
+                onCheckStatus = viewModel::checkAutofillStatus,
+                onChangePasswordClick = { navController.navigate(VaultenDestinations.CHANGE_PASSWORD) }
             )
         }
 
@@ -426,7 +447,47 @@ fun VaultenNavGraph(
             }
         }
 
-        // TODO: Add other screen destinations as they are implemented
-        // - Security Settings
+        // Change Password Screen
+        composable(VaultenDestinations.CHANGE_PASSWORD) {
+            val viewModel: ChangePasswordViewModel = viewModel(
+                factory = ChangePasswordViewModelFactory(authRepository)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            ChangePasswordScreen(
+                uiState = uiState,
+                onCurrentPasswordChange = viewModel::onCurrentPasswordChange,
+                onNewPasswordChange = viewModel::onNewPasswordChange,
+                onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+                onSaveClick = viewModel::changePassword,
+                onBackClick = { navController.popBackStack() },
+                onSavedSuccessfully = { navController.popBackStack() }
+            )
+        }
+
+        // Lock Screen — shown when the session has timed out
+        composable(VaultenDestinations.LOCK) {
+            val viewModel: LockViewModel = viewModel(
+                factory = LockViewModelFactory(tokenManager)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            LockScreen(
+                uiState = uiState,
+                onUnlockSuccess = {
+                    viewModel.onUnlockSuccess()
+                    navController.navigate(VaultenDestinations.DASHBOARD) {
+                        popUpTo(VaultenDestinations.LOCK) { inclusive = true }
+                    }
+                },
+                onUnlockError = viewModel::onUnlockError,
+                onLogout = {
+                    tokenManager.deleteToken()
+                    navController.navigate(VaultenDestinations.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
     }
 }

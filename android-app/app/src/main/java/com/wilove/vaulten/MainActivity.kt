@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import com.wilove.vaulten.data.local.TokenManager
 import com.wilove.vaulten.ui.navigation.VaultenDestinations
 import com.wilove.vaulten.ui.navigation.VaultenNavGraph
 import com.wilove.vaulten.ui.theme.VaultenTheme
@@ -46,6 +47,19 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         recreate()
+    }
+
+    /**
+     * Save the current timestamp when the app goes to background so that
+     * [SessionManager] can decide whether to show the lock screen on resume.
+     * Only saved when the user is logged in (token present).
+     */
+    override fun onStop() {
+        super.onStop()
+        val tokenManager = TokenManager(this)
+        if (tokenManager.getToken() != null) {
+            tokenManager.saveLastActiveTimestamp(System.currentTimeMillis())
+        }
     }
 
     private fun setupContent(intent: Intent) {

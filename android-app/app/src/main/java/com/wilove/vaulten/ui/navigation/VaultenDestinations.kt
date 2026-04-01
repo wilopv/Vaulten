@@ -16,6 +16,8 @@ object VaultenDestinations {
     const val PASSWORD_GENERATOR_FOR_CREDENTIAL = "password_generator_for_credential"
     const val SECURITY_SETTINGS = "security_settings"
     const val SETTINGS = "settings"
+    const val CHANGE_PASSWORD = "change_password"
+    const val LOCK = "lock"
 
     /**
      * Creates a route for credential detail with the given ID.
