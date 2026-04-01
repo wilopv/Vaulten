@@ -34,9 +34,27 @@ interface VaultRepository {
     suspend fun saveCredential(credential: Credential)
 
     /**
-     * Deletes a credential.
+     * Soft-deletes a credential (moves it to trash). Does NOT call the API —
+     * the server entry is only deleted when [permanentlyDeleteCredential] is called.
      */
     suspend fun deleteCredential(id: String)
+
+    /**
+     * Returns all credentials in the trash as a reactive stream.
+     */
+    fun getDeletedCredentials(): Flow<List<Credential>>
+
+    /**
+     * Restores a credential from trash (local only — the server entry was already deleted).
+     * Note: the next full sync will remove this credential again since the server no longer has it.
+     */
+    suspend fun restoreCredential(id: String)
+
+    /**
+     * Permanently removes a credential from both the server and local database.
+     * This is the only place the DELETE API is called.
+     */
+    suspend fun permanentlyDeleteCredential(id: String)
 
     /**
      * Synchronizes local data with the remote server.

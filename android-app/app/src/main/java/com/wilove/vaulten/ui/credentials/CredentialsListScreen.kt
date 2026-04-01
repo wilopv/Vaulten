@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,6 +51,7 @@ fun CredentialsListScreen(
     onAddCredentialClick: () -> Unit,
     onBackClick: () -> Unit,
     onRefresh: () -> Unit,
+    onTrashClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -67,6 +69,14 @@ fun CredentialsListScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onTrashClick) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Papelera"
                         )
                     }
                 }

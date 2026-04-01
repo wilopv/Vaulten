@@ -17,7 +17,10 @@ import com.wilove.vaulten.domain.usecase.GeneratePasswordUseCase
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
 import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
+import com.wilove.vaulten.domain.usecase.GetDeletedCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
+import com.wilove.vaulten.domain.usecase.PermanentlyDeleteCredentialUseCase
+import com.wilove.vaulten.domain.usecase.RestoreCredentialUseCase
 import com.wilove.vaulten.domain.usecase.UpdateCredentialUseCase
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialScreen
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialViewModel
@@ -25,6 +28,8 @@ import com.wilove.vaulten.ui.credentials.CredentialDetailScreen
 import com.wilove.vaulten.ui.credentials.CredentialDetailViewModel
 import com.wilove.vaulten.ui.credentials.CredentialsListScreen
 import com.wilove.vaulten.ui.credentials.CredentialsListViewModel
+import com.wilove.vaulten.ui.trash.TrashScreen
+import com.wilove.vaulten.ui.trash.TrashViewModel
 import com.wilove.vaulten.ui.dashboard.DashboardScreen
 import com.wilove.vaulten.ui.dashboard.DashboardViewModel
 import androidx.room.Room
@@ -110,6 +115,9 @@ fun VaultenNavGraph(
     val deleteCredentialUseCase = androidx.compose.runtime.remember { DeleteCredentialUseCase(vaultRepository) }
     val passwordHealthUseCase = androidx.compose.runtime.remember { PasswordHealthUseCase() }
     val generatePasswordUseCase = androidx.compose.runtime.remember { GeneratePasswordUseCase() }
+    val getDeletedCredentialsUseCase = androidx.compose.runtime.remember { GetDeletedCredentialsUseCase(vaultRepository) }
+    val restoreCredentialUseCase = androidx.compose.runtime.remember { RestoreCredentialUseCase(vaultRepository) }
+    val permanentlyDeleteCredentialUseCase = androidx.compose.runtime.remember { PermanentlyDeleteCredentialUseCase(vaultRepository) }
 
     NavHost(
         navController = navController,
@@ -244,7 +252,8 @@ fun VaultenNavGraph(
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onRefresh = viewModel::refresh
+                onRefresh = viewModel::refresh,
+                onTrashClick = { navController.navigate(VaultenDestinations.TRASH) }
             )
         }
 
@@ -462,6 +471,25 @@ fun VaultenNavGraph(
                 onSaveClick = viewModel::changePassword,
                 onBackClick = { navController.popBackStack() },
                 onSavedSuccessfully = { navController.popBackStack() }
+            )
+        }
+
+        // Trash Screen
+        composable(VaultenDestinations.TRASH) {
+            val viewModel: TrashViewModel = viewModel(
+                factory = TrashViewModelFactory(
+                    getDeletedCredentialsUseCase,
+                    restoreCredentialUseCase,
+                    permanentlyDeleteCredentialUseCase
+                )
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            TrashScreen(
+                uiState = uiState,
+                onBackClick = { navController.popBackStack() },
+                onRestore = viewModel::restore,
+                onPermanentlyDelete = viewModel::permanentlyDelete
             )
         }
 

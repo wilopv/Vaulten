@@ -7,6 +7,7 @@ import com.wilove.vaulten.domain.repository.VaultRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Fake implementation of [VaultRepository] for testing and development.
@@ -99,6 +100,14 @@ class FakeVaultRepository : VaultRepository {
 
     override suspend fun deleteCredential(id: String) {
         delay(300)
+        mockCredentials.removeIf { it.id == id }
+    }
+
+    override fun getDeletedCredentials(): Flow<List<Credential>> = flowOf(emptyList())
+
+    override suspend fun restoreCredential(id: String) {}
+
+    override suspend fun permanentlyDeleteCredential(id: String) {
         mockCredentials.removeIf { it.id == id }
     }
 

@@ -16,5 +16,6 @@ data class Credential(
     val username: String,
     val password: String,
     val url: String? = null,
-    val lastModified: Long = System.currentTimeMillis()
+    val lastModified: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null
 )

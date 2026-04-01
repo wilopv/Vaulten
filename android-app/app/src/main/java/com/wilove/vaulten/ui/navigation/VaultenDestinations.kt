@@ -18,6 +18,7 @@ object VaultenDestinations {
     const val SETTINGS = "settings"
     const val CHANGE_PASSWORD = "change_password"
     const val LOCK = "lock"
+    const val TRASH = "trash"
 
     /**
      * Creates a route for credential detail with the given ID.

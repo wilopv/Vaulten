@@ -10,7 +10,8 @@ fun VaultEntity.toDomain(): Credential {
         username = username,
         password = password,
         url = url,
-        lastModified = lastModified
+        lastModified = lastModified,
+        deletedAt = deletedAt
     )
 }
 
@@ -21,7 +22,8 @@ fun Credential.toEntity(): VaultEntity {
         username = username,
         password = password,
         url = url,
-        lastModified = lastModified
+        lastModified = lastModified,
+        deletedAt = deletedAt
     )
 }
 

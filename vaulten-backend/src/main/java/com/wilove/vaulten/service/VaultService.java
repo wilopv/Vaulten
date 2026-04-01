@@ -1,6 +1,7 @@
 package com.wilove.vaulten.service;
 
 import com.wilove.vaulten.exception.AccessDeniedException;
+import com.wilove.vaulten.exception.EntityNotFoundException;
 import com.wilove.vaulten.model.User;
 import com.wilove.vaulten.model.VaultEntry;
 import com.wilove.vaulten.repository.VaultEntryRepository;
@@ -45,7 +46,7 @@ public class VaultService {
 
     public VaultEntry getEntryById(Long id, User user) {
         VaultEntry entry = vaultEntryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Entry not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Entry not found"));
 
         if (!entry.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException();
@@ -57,7 +58,11 @@ public class VaultService {
 
     @Transactional
     public VaultEntry updateEntry(Long id, VaultEntry updatedEntry, User user) {
-        VaultEntry existingEntry = getEntryById(id, user);
+        VaultEntry existingEntry = vaultEntryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Entry not found"));
+        if (!existingEntry.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException();
+        }
 
         existingEntry.setName(updatedEntry.getName());
         existingEntry.setUsername(updatedEntry.getUsername());
@@ -75,7 +80,11 @@ public class VaultService {
 
     @Transactional
     public void deleteEntry(Long id, User user) {
-        VaultEntry entry = getEntryById(id, user);
+        VaultEntry entry = vaultEntryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Entry not found"));
+        if (!entry.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException();
+        }
         vaultEntryRepository.delete(entry);
     }
 

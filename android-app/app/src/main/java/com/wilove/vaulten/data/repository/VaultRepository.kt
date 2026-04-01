@@ -72,18 +72,43 @@ class VaultRepositoryImpl(
     }
 
     override suspend fun deleteCredential(id: String) {
-        val idLong = id.toLongOrNull() ?: return
-        val result = handleApiCall { apiService.deleteEntry(idLong) }
-        if (result.isSuccess) {
-            vaultDao.deleteCredential(id)
-        } else {
-            throw result.exceptionOrNull() ?: Exception("Failed to delete credential")
+        // Soft delete only — the entry stays on the server until permanently deleted.
+        // This allows restoring without any server interaction.
+        vaultDao.softDeleteCredential(id, System.currentTimeMillis())
+    }
+
+    override fun getDeletedCredentials(): Flow<List<Credential>> {
+        return vaultDao.getDeletedCredentials().map { it.toDomainList() }
+    }
+
+    override suspend fun restoreCredential(id: String) {
+        // Restore is local only — the server entry was already deleted.
+        // A subsequent full sync will remove this credential again.
+        vaultDao.restoreCredential(id)
+    }
+
+    override suspend fun permanentlyDeleteCredential(id: String) {
+        // This is the only place we call the API to delete — when the user explicitly
+        // chooses to remove the credential forever from the trash.
+        val idLong = id.toLongOrNull()
+        if (idLong != null) {
+            val response = try {
+                apiService.deleteEntry(idLong)
+            } catch (e: Exception) {
+                throw Exception("Failed to delete credential: ${e.message}")
+            }
+            // 204 = deleted now, 404 = already gone (e.g. deleted via another device).
+            // Both are acceptable — remove from Room either way.
+            if (!response.isSuccessful && response.code() != 404) {
+                throw Exception("Failed to delete credential: HTTP ${response.code()}")
+            }
         }
+        vaultDao.permanentlyDeleteCredential(id)
     }
 
     override suspend fun sync() {
-        // For now, full sync (get all entries and replace local)
-        // In the future, use the "since" timestamp for incremental sync
+        // Full sync: clear non-trashed entries and replace with remote data.
+        // Trashed entries (deletedAt IS NOT NULL) are preserved by clearAll().
         val result = handleApiCall { apiService.getEntries() }
         if (result.isSuccess) {
             val remoteEntries = result.getOrNull() ?: emptyList()

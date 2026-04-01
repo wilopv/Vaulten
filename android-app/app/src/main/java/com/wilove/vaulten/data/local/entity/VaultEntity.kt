@@ -12,5 +12,6 @@ data class VaultEntity(
     val password: String,
     val url: String?,
     val lastModified: Long,
-    val synced: Boolean = true
+    val synced: Boolean = true,
+    val deletedAt: Long? = null
 )

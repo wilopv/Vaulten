@@ -9,11 +9,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VaultDao {
-    @Query("SELECT * FROM vault_entries ORDER BY lastModified DESC")
+    @Query("SELECT * FROM vault_entries WHERE deletedAt IS NULL ORDER BY lastModified DESC")
     fun getAllCredentials(): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_entries ORDER BY lastModified DESC LIMIT :limit")
+    @Query("SELECT * FROM vault_entries WHERE deletedAt IS NULL ORDER BY lastModified DESC LIMIT :limit")
     fun getRecentCredentials(limit: Int): Flow<List<VaultEntity>>
+
+    @Query("SELECT * FROM vault_entries WHERE deletedAt IS NOT NULL ORDER BY deletedAt DESC")
+    fun getDeletedCredentials(): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_entries WHERE id = :id")
     suspend fun getCredentialById(id: String): VaultEntity?
@@ -27,9 +30,15 @@ interface VaultDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCredential(credential: VaultEntity)
 
-    @Query("DELETE FROM vault_entries WHERE id = :id")
-    suspend fun deleteCredential(id: String)
+    @Query("UPDATE vault_entries SET deletedAt = :deletedAt WHERE id = :id")
+    suspend fun softDeleteCredential(id: String, deletedAt: Long)
 
-    @Query("DELETE FROM vault_entries")
+    @Query("UPDATE vault_entries SET deletedAt = NULL WHERE id = :id")
+    suspend fun restoreCredential(id: String)
+
+    @Query("DELETE FROM vault_entries WHERE id = :id")
+    suspend fun permanentlyDeleteCredential(id: String)
+
+    @Query("DELETE FROM vault_entries WHERE deletedAt IS NULL")
     suspend fun clearAll()
 }
