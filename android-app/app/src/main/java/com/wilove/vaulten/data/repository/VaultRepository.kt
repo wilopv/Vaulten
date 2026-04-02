@@ -14,6 +14,10 @@ import com.wilove.vaulten.domain.repository.VaultRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import retrofit2.Response
+import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 /**
  * Repository responsible for managing vault entries and synchronization.
@@ -32,11 +36,10 @@ class VaultRepositoryImpl(
     }
 
     override suspend fun getSecurityAlerts(): List<SecurityAlert> {
-        return emptyList() // TODO: Implement if needed
+        return emptyList()
     }
 
     override suspend fun getCredentialById(id: String): Credential? {
-        // Prefer local for details, then fetch remote? For now, local is cache.
         return vaultDao.getCredentialById(id)?.toDomain()
     }
 
@@ -53,28 +56,23 @@ class VaultRepositoryImpl(
         )
 
         val result = if (idLong == null || idLong == 0L) {
-            handleApiCall { apiService.createEntry(request) }
+            handleApiCall(::saveError) { apiService.createEntry(request) }
         } else {
-            handleApiCall { apiService.updateEntry(idLong, request) }
+            handleApiCall(::saveError) { apiService.updateEntry(idLong, request) }
         }
-        
+
         if (result.isSuccess) {
             val remoteEntry = result.getOrNull()
             if (remoteEntry != null) {
-                // Use the server-assigned ID but keep the original plaintext password.
-                // Never trust the API response's password field — the backend may return
-                // an encrypted or transformed value depending on its implementation.
                 val serverAssignedId = remoteEntry.id.toString()
                 vaultDao.insertCredential(credential.copy(id = serverAssignedId).toEntity())
             }
         } else {
-            throw result.exceptionOrNull() ?: Exception("Failed to save credential")
+            throw result.exceptionOrNull() ?: Exception("No se pudo guardar la credencial.")
         }
     }
 
     override suspend fun deleteCredential(id: String) {
-        // Soft delete only — the entry stays on the server until permanently deleted.
-        // This allows restoring without any server interaction.
         vaultDao.softDeleteCredential(id, System.currentTimeMillis())
     }
 
@@ -83,35 +81,27 @@ class VaultRepositoryImpl(
     }
 
     override suspend fun restoreCredential(id: String) {
-        // Restore is local only — the server entry was already deleted.
-        // A subsequent full sync will remove this credential again.
         vaultDao.restoreCredential(id)
     }
 
     override suspend fun permanentlyDeleteCredential(id: String) {
-        // This is the only place we call the API to delete — when the user explicitly
-        // chooses to remove the credential forever from the trash.
         val idLong = id.toLongOrNull()
         if (idLong != null) {
             val response = try {
                 apiService.deleteEntry(idLong)
             } catch (e: Exception) {
-                throw Exception("Failed to delete credential: ${e.message}")
+                throw networkError(e)
             }
-            // 204 = deleted now, 404 = already gone (e.g. deleted via another device).
-            // Both are acceptable — remove from Room either way.
+            // 204 = deleted now, 404 = already gone (deleted from another device) — both are fine.
             if (!response.isSuccessful && response.code() != 404) {
-                throw Exception("Failed to delete credential: HTTP ${response.code()}")
+                throw deleteError(response.code())
             }
         }
         vaultDao.permanentlyDeleteCredential(id)
     }
 
     override suspend fun sync() {
-        // Full sync: clear non-trashed entries and replace with remote data.
-        // Trashed entries (deletedAt IS NOT NULL) are preserved by clearAll().
-        // androidPackageName is now persisted server-side, so no manual preservation needed.
-        val result = handleApiCall { apiService.getEntries() }
+        val result = handleApiCall(::syncError) { apiService.getEntries() }
         if (result.isSuccess) {
             val remoteEntries = result.getOrNull() ?: emptyList()
             vaultDao.clearAll()
@@ -119,20 +109,56 @@ class VaultRepositoryImpl(
         }
     }
 
-    private suspend fun <T> handleApiCall(call: suspend () -> Response<T>): Result<T> {
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private suspend fun <T> handleApiCall(
+        errorMapper: (Int) -> Exception,
+        call: suspend () -> Response<T>
+    ): Result<T> {
         return try {
             val response = call()
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else if (response.isSuccessful && response.code() == 204) {
-                 // Handle NoContent for deletes
-                @Suppress("UNCHECKED_CAST")
-                Result.success(Unit as T)
-            } else {
-                Result.failure(Exception("API Error: ${response.code()}"))
+            when {
+                response.isSuccessful && response.body() != null ->
+                    Result.success(response.body()!!)
+                response.isSuccessful && response.code() == 204 -> {
+                    @Suppress("UNCHECKED_CAST")
+                    Result.success(Unit as T)
+                }
+                else -> Result.failure(errorMapper(response.code()))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(networkError(e))
         }
+    }
+
+    private fun saveError(code: Int): Exception = when (code) {
+        400  -> Exception("Los datos de la credencial no son válidos.")
+        401  -> Exception("Tu sesión ha expirado. Vuelve a iniciar sesión.")
+        403  -> Exception("No tienes permiso para realizar esta acción.")
+        409  -> Exception("Ya existe una credencial con ese nombre.")
+        422  -> Exception("El formato de los datos no es válido.")
+        in 500..599 -> Exception("El servidor no está disponible ahora mismo. Inténtalo más tarde.")
+        else -> Exception("No se pudo guardar la credencial. Inténtalo de nuevo.")
+    }
+
+    private fun deleteError(code: Int): Exception = when (code) {
+        401  -> Exception("Tu sesión ha expirado. Vuelve a iniciar sesión.")
+        403  -> Exception("No tienes permiso para eliminar esta credencial.")
+        in 500..599 -> Exception("El servidor no está disponible ahora mismo. Inténtalo más tarde.")
+        else -> Exception("No se pudo eliminar la credencial. Inténtalo de nuevo.")
+    }
+
+    private fun syncError(code: Int): Exception = when (code) {
+        401  -> Exception("Tu sesión ha expirado. Vuelve a iniciar sesión.")
+        in 500..599 -> Exception("El servidor no está disponible ahora mismo. Inténtalo más tarde.")
+        else -> Exception("No se pudo sincronizar la bóveda. Inténtalo de nuevo.")
+    }
+
+    private fun networkError(e: Exception): Exception = when (e) {
+        is UnknownHostException,
+        is ConnectException       -> Exception("Sin conexión a internet. Comprueba tu red e inténtalo de nuevo.")
+        is SocketTimeoutException -> Exception("El servidor tardó demasiado en responder. Inténtalo de nuevo.")
+        is IOException            -> Exception("Error de conexión. Inténtalo de nuevo.")
+        else                      -> Exception("Ocurrió un error inesperado. Inténtalo de nuevo.")
     }
 }

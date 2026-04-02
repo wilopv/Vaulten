@@ -51,7 +51,7 @@ class TrashViewModel(
             try {
                 restoreCredentialUseCase(credentialId)
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "No se pudo restaurar: ${e.message}") }
+                _uiState.update { it.copy(errorMessage = e.message ?: "No se pudo restaurar la credencial. Inténtalo de nuevo.") }
             }
         }
     }
@@ -61,7 +61,7 @@ class TrashViewModel(
             try {
                 permanentlyDeleteCredentialUseCase(credentialId)
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "No se pudo eliminar: ${e.message}") }
+                _uiState.update { it.copy(errorMessage = e.message ?: "No se pudo eliminar la credencial. Inténtalo de nuevo.") }
             }
         }
     }

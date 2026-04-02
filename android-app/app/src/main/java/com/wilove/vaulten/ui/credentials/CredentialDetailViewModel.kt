@@ -46,7 +46,7 @@ class CredentialDetailViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "Failed to load credential: ${e.message}"
+                        errorMessage = e.message ?: "No se pudo cargar la credencial. Inténtalo de nuevo."
                     )
                 }
             }
@@ -67,7 +67,7 @@ class CredentialDetailViewModel(
                 _uiState.update {
                     it.copy(
                         isDeleting = false,
-                        deleteError = "Failed to delete credential: ${e.message}"
+                        deleteError = e.message ?: "No se pudo eliminar la credencial. Inténtalo de nuevo."
                     )
                 }
             }

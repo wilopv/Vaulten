@@ -47,17 +47,17 @@ class LoginViewModel(
         if (current.isLockedOut || current.isLoading) return
 
         if (current.email.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Email is required.") }
+            _uiState.update { it.copy(errorMessage = "El email es obligatorio.") }
             return
         }
 
         if (!EMAIL_REGEX.matches(current.email)) {
-            _uiState.update { it.copy(errorMessage = "Enter a valid email address.") }
+            _uiState.update { it.copy(errorMessage = "Introduce un email válido.") }
             return
         }
 
         if (current.masterPassword.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Master password is required.") }
+            _uiState.update { it.copy(errorMessage = "La contraseña es obligatoria.") }
             return
         }
 
@@ -71,7 +71,7 @@ class LoginViewModel(
             result.onSuccess {
                 onSuccess()
             }.onFailure { e ->
-                _uiState.update { it.copy(errorMessage = e.message ?: "Authentication failed") }
+                _uiState.update { it.copy(errorMessage = e.message ?: "No se pudo iniciar sesión. Inténtalo de nuevo.") }
             }
         }
     }

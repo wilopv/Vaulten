@@ -55,7 +55,7 @@ class CreateEditCredentialViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "Failed to load credential: ${e.message}"
+                        errorMessage = e.message ?: "No se pudo cargar la credencial. Inténtalo de nuevo."
                     )
                 }
             }
@@ -154,7 +154,7 @@ class CreateEditCredentialViewModel(
                 _uiState.update {
                     it.copy(
                         isSaving = false,
-                        errorMessage = "Failed to save credential: ${e.message}"
+                        errorMessage = e.message ?: "No se pudo guardar la credencial. Inténtalo de nuevo."
                     )
                 }
             }

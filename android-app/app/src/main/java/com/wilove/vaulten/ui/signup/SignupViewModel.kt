@@ -54,32 +54,32 @@ class SignupViewModel(
         if (current.isLoading) return
 
         if (current.fullName.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Full name is required.") }
+            _uiState.update { it.copy(errorMessage = "El nombre es obligatorio.") }
             return
         }
 
         if (current.email.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Email is required.") }
+            _uiState.update { it.copy(errorMessage = "El email es obligatorio.") }
             return
         }
 
         if (!EMAIL_REGEX.matches(current.email)) {
-            _uiState.update { it.copy(errorMessage = "Enter a valid email address.") }
+            _uiState.update { it.copy(errorMessage = "Introduce un email válido.") }
             return
         }
 
         if (current.masterPassword.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Master password is required.") }
+            _uiState.update { it.copy(errorMessage = "La contraseña es obligatoria.") }
             return
         }
 
         if (current.confirmPassword.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Confirm your password.") }
+            _uiState.update { it.copy(errorMessage = "Confirma tu contraseña.") }
             return
         }
 
         if (current.masterPassword != current.confirmPassword) {
-            _uiState.update { it.copy(errorMessage = "Passwords do not match.") }
+            _uiState.update { it.copy(errorMessage = "Las contraseñas no coinciden.") }
             return
         }
 
@@ -101,13 +101,13 @@ class SignupViewModel(
                 loginResult.onSuccess {
                     onSuccess()
                 }.onFailure { e ->
-                    _uiState.update { it.copy(errorMessage = "Registration was successful, but automatic login failed: ${e.message}") }
+                    _uiState.update { it.copy(errorMessage = e.message ?: "Cuenta creada, pero no se pudo iniciar sesión automáticamente. Inicia sesión manualmente.") }
                 }
             } else {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = registerResult.exceptionOrNull()?.message ?: "Registration failed"
+                        errorMessage = registerResult.exceptionOrNull()?.message ?: "No se pudo crear la cuenta. Inténtalo de nuevo."
                     )
                 }
             }
