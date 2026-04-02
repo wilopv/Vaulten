@@ -20,6 +20,7 @@ object VaultenDestinations {
     const val LOCK = "lock"
     const val TRASH = "trash"
     const val APP_PICKER = "app_picker"
+    const val EXPORT_IMPORT = "export_import"
 
     /**
      * Creates a route for credential detail with the given ID.

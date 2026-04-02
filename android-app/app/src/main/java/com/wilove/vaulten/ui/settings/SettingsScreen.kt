@@ -7,6 +7,8 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -33,7 +35,8 @@ fun SettingsScreen(
     onBackClick: () -> Unit,
     onEnableAutofillClick: () -> Unit, // kept for API compatibility; intent is now handled internally
     onCheckStatus: () -> Unit,
-    onChangePasswordClick: () -> Unit = {}
+    onChangePasswordClick: () -> Unit = {},
+    onExportImportClick: () -> Unit = {}
 ) {
     val ctx = LocalContext.current
 
@@ -123,6 +126,7 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             Text(
                 text = "Autofill",
@@ -183,6 +187,37 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Cambiar contraseña")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Datos",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Exportar / Importar bóveda",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Guarda una copia de seguridad o restaura credenciales desde un archivo CSV o JSON cifrado.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onExportImportClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Exportar / Importar")
                     }
                 }
             }

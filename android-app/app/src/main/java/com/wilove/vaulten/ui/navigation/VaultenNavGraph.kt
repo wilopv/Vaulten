@@ -16,8 +16,10 @@ import com.wilove.vaulten.domain.usecase.DeleteCredentialUseCase
 import com.wilove.vaulten.domain.usecase.GeneratePasswordUseCase
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
+import com.wilove.vaulten.domain.usecase.ExportVaultUseCase
 import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
 import com.wilove.vaulten.domain.usecase.GetDeletedCredentialsUseCase
+import com.wilove.vaulten.domain.usecase.ImportVaultUseCase
 import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
 import com.wilove.vaulten.domain.usecase.PermanentlyDeleteCredentialUseCase
 import com.wilove.vaulten.domain.usecase.RestoreCredentialUseCase
@@ -25,6 +27,8 @@ import com.wilove.vaulten.domain.usecase.UpdateCredentialUseCase
 import android.app.Application
 import com.wilove.vaulten.ui.credentials.AppPickerScreen
 import com.wilove.vaulten.ui.credentials.AppPickerViewModel
+import com.wilove.vaulten.ui.settings.ExportImportScreen
+import com.wilove.vaulten.ui.settings.ExportImportViewModel
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialScreen
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialViewModel
 import com.wilove.vaulten.ui.credentials.CredentialDetailScreen
@@ -121,6 +125,8 @@ fun VaultenNavGraph(
     val getDeletedCredentialsUseCase = androidx.compose.runtime.remember { GetDeletedCredentialsUseCase(vaultRepository) }
     val restoreCredentialUseCase = androidx.compose.runtime.remember { RestoreCredentialUseCase(vaultRepository) }
     val permanentlyDeleteCredentialUseCase = androidx.compose.runtime.remember { PermanentlyDeleteCredentialUseCase(vaultRepository) }
+    val exportVaultUseCase = androidx.compose.runtime.remember { ExportVaultUseCase(vaultRepository) }
+    val importVaultUseCase = androidx.compose.runtime.remember { ImportVaultUseCase(vaultRepository) }
 
     NavHost(
         navController = navController,
@@ -225,7 +231,8 @@ fun VaultenNavGraph(
                 onBackClick = { navController.popBackStack() },
                 onEnableAutofillClick = {},
                 onCheckStatus = viewModel::checkAutofillStatus,
-                onChangePasswordClick = { navController.navigate(VaultenDestinations.CHANGE_PASSWORD) }
+                onChangePasswordClick = { navController.navigate(VaultenDestinations.CHANGE_PASSWORD) },
+                onExportImportClick = { navController.navigate(VaultenDestinations.EXPORT_IMPORT) }
             )
         }
 
@@ -551,6 +558,29 @@ fun VaultenNavGraph(
                     navController.popBackStack()
                 },
                 onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // Export / Import Screen
+        composable(VaultenDestinations.EXPORT_IMPORT) {
+            val viewModel: ExportImportViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                factory = ExportImportViewModelFactory(exportVaultUseCase, importVaultUseCase)
+            )
+            val uiState by viewModel.uiState.collectAsState()
+
+            ExportImportScreen(
+                uiState = uiState,
+                onExportCsvClick = viewModel::exportAsCsv,
+                onRequestEncryptedExportClick = viewModel::requestEncryptedExport,
+                onExportEncryptedConfirm = viewModel::exportAsEncryptedJson,
+                onExportEncryptedDismiss = viewModel::dismissEncryptionDialog,
+                onImportEncryptedConfirm = viewModel::importEncryptedJson,
+                onImportEncryptedDismiss = viewModel::dismissDecryptionDialog,
+                onFileSelected = viewModel::onFileSelected,
+                onCsvExportHandled = viewModel::onCsvExportHandled,
+                onJsonExportHandled = viewModel::onJsonExportHandled,
+                onBackClick = { navController.popBackStack() },
+                onClearMessages = viewModel::clearMessages
             )
         }
 
