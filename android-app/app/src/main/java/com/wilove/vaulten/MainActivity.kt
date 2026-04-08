@@ -2,14 +2,15 @@ package com.wilove.vaulten
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import com.wilove.vaulten.data.local.SessionManager
 import com.wilove.vaulten.data.local.TokenManager
 import com.wilove.vaulten.ui.navigation.VaultenDestinations
 import com.wilove.vaulten.ui.navigation.VaultenNavGraph
@@ -23,7 +24,7 @@ import com.wilove.vaulten.ui.theme.VaultenTheme
  * - [EXTRA_START_DESTINATION]: the route to open directly (login or credentials_list)
  * - [EXTRA_SEARCH_QUERY]: a pre-filled search term for the credentials list
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     companion object {
         /** Route to start at when launched from the autofill fallback. */
@@ -31,6 +32,9 @@ class MainActivity : ComponentActivity() {
         /** Pre-filled search query to apply when opening the credentials list. */
         const val EXTRA_SEARCH_QUERY = "autofill_search_query"
     }
+
+    // True after onStop, so onResume knows the app was genuinely backgrounded.
+    private var wasInBackground = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,15 +54,32 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Save the current timestamp when the app goes to background so that
-     * [SessionManager] can decide whether to show the lock screen on resume.
-     * Only saved when the user is logged in (token present).
+     * Save the current timestamp when the app goes to background and mark that
+     * we were backgrounded so [onResume] can re-lock if biometric lock is on.
      */
     override fun onStop() {
         super.onStop()
+        wasInBackground = true
         val tokenManager = TokenManager(this)
         if (tokenManager.getToken() != null) {
             tokenManager.saveLastActiveTimestamp(System.currentTimeMillis())
+        }
+    }
+
+    /**
+     * When the app returns from background and the user has biometric lock enabled,
+     * recreate the activity so [VaultenNavGraph] routes to the lock screen.
+     */
+    override fun onResume() {
+        super.onResume()
+        if (wasInBackground) {
+            wasInBackground = false
+            val tokenManager = TokenManager(this)
+            // If logged in, always re-route: expired session → LOGIN, active session → LOCK
+            if (tokenManager.getToken() != null) {
+                recreate()
+                return
+            }
         }
     }
 

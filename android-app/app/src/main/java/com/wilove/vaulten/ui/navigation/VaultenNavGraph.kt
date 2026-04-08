@@ -86,11 +86,11 @@ fun VaultenNavGraph(
             startDestination != VaultenDestinations.LOGIN -> startDestination
             // No token → show login
             tokenManager.getToken() == null -> VaultenDestinations.LOGIN
-            // Token exists but session timed out → show lock screen
+            // Session timed out → LoginScreen (must re-authenticate with server)
             SessionManager.isLockRequired(tokenManager.getLastActiveTimestamp()) ->
-                VaultenDestinations.LOCK
-            // Token exists and session is active → go straight to dashboard
-            else -> VaultenDestinations.DASHBOARD
+                VaultenDestinations.LOGIN
+            // Active session → always lock (biometric/device credential prompt)
+            else -> VaultenDestinations.LOCK
         }
     }
     val okHttpClient = androidx.compose.runtime.remember { NetworkModule.provideOkHttpClient(tokenManager) }
@@ -136,26 +136,23 @@ fun VaultenNavGraph(
         // Login Screen
         composable(VaultenDestinations.LOGIN) {
             val viewModel: LoginViewModel = viewModel(
-                factory = LoginViewModelFactory(authRepository)
+                factory = LoginViewModelFactory(authRepository, tokenManager)
             )
             val uiState by viewModel.uiState.collectAsState()
+
+            val navigateToDashboard = {
+                navController.navigate(VaultenDestinations.DASHBOARD) {
+                    popUpTo(VaultenDestinations.LOGIN) { inclusive = true }
+                }
+            }
 
             LoginScreen(
                 uiState = uiState,
                 onEmailChange = viewModel::onEmailChange,
                 onPasswordChange = viewModel::onPasswordChange,
-                onUnlockClick = {
-                    viewModel.onUnlockClick {
-                        // Navigate to dashboard on successful unlock
-                        navController.navigate(VaultenDestinations.DASHBOARD) {
-                            popUpTo(VaultenDestinations.LOGIN) { inclusive = true }
-                        }
-                    }
-                },
-                onBiometricToggle = viewModel::onBiometricToggle,
-                onSignupClick = {
-                    navController.navigate(VaultenDestinations.SIGNUP)
-                }
+                onUnlockClick = { viewModel.onUnlockClick(navigateToDashboard) },
+                onBiometricLoginSuccess = { viewModel.onBiometricLoginSuccess(navigateToDashboard) },
+                onSignupClick = { navController.navigate(VaultenDestinations.SIGNUP) }
             )
         }
 
@@ -224,8 +221,6 @@ fun VaultenNavGraph(
             )
             val uiState by viewModel.uiState.collectAsState()
 
-            // Intent launching is handled inside SettingsScreen via LocalContext.current,
-            // which is the live Activity context — no wrapper, no launcher, no flags needed.
             SettingsScreen(
                 uiState = uiState,
                 onBackClick = { navController.popBackStack() },

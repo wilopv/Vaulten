@@ -60,8 +60,41 @@ class TokenManager(context: Context) {
         return prefs.getLong(KEY_LAST_ACTIVE, 0L)
     }
 
+    /**
+     * Saves the email and password for biometric login.
+     * Stored in the same AES-256-GCM encrypted prefs as the token.
+     */
+    fun saveBiometricCredentials(email: String, password: String) {
+        prefs.edit()
+            .putString(KEY_BIOMETRIC_EMAIL, email)
+            .putString(KEY_BIOMETRIC_PASSWORD, password)
+            .apply()
+    }
+
+    fun getBiometricEmail(): String? = prefs.getString(KEY_BIOMETRIC_EMAIL, null)
+    fun getBiometricPassword(): String? = prefs.getString(KEY_BIOMETRIC_PASSWORD, null)
+    fun hasBiometricCredentials(): Boolean = getBiometricEmail() != null
+
+    fun clearBiometricCredentials() {
+        prefs.edit()
+            .remove(KEY_BIOMETRIC_EMAIL)
+            .remove(KEY_BIOMETRIC_PASSWORD)
+            .apply()
+    }
+
+    fun setBiometricLockEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_BIOMETRIC_LOCK_ENABLED, enabled).apply()
+    }
+
+    fun isBiometricLockEnabled(): Boolean {
+        return prefs.getBoolean(KEY_BIOMETRIC_LOCK_ENABLED, false)
+    }
+
     companion object {
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_LAST_ACTIVE = "last_active_timestamp"
+        private const val KEY_BIOMETRIC_EMAIL = "biometric_email"
+        private const val KEY_BIOMETRIC_PASSWORD = "biometric_password"
+        private const val KEY_BIOMETRIC_LOCK_ENABLED = "biometric_lock_enabled"
     }
 }

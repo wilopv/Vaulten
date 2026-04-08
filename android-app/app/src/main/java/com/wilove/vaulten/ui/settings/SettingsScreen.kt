@@ -188,6 +188,7 @@ fun SettingsScreen(
                     ) {
                         Text("Cambiar contraseña")
                     }
+
                 }
             }
 

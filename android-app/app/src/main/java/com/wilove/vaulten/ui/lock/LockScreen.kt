@@ -99,7 +99,7 @@ fun LockScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "La sesión ha expirado por inactividad.",
+            text = "Usa tu huella o el bloqueo del dispositivo para continuar.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

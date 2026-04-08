@@ -2,6 +2,7 @@ package com.wilove.vaulten.ui.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wilove.vaulten.data.local.TokenManager
 import com.wilove.vaulten.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,39 +10,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel for the Login screen.
- * Owns [LoginUiState] and exposes intent handlers for the UI.
- */
 class LoginViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
+
     private val _uiState = MutableStateFlow(
-        LoginUiState(
-            email = "usuario1@correo.com",
-            masterPassword = "password123"
-        )
+        LoginUiState(hasBiometricCredentials = tokenManager.hasBiometricCredentials())
     )
+
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    /** Updates the password field as the user types. */
     fun onPasswordChange(value: String) {
         _uiState.update { it.copy(masterPassword = value, errorMessage = null) }
     }
 
-    /** Updates the email field as the user types. */
     fun onEmailChange(value: String) {
         _uiState.update { it.copy(email = value, errorMessage = null) }
     }
 
-    /** Enables or disables biometric unlock in the UI. */
-    fun onBiometricToggle(enabled: Boolean) {
-        _uiState.update { it.copy(biometricEnabled = enabled) }
-    }
-
-    /**
-     * Authenticates the user using the provided credentials.
-     */
     fun onUnlockClick(onSuccess: () -> Unit) {
         val current = _uiState.value
         if (current.isLockedOut || current.isLoading) return
@@ -65,10 +52,10 @@ class LoginViewModel(
 
         viewModelScope.launch {
             val result = authRepository.login(current.email, current.masterPassword)
-            
             _uiState.update { it.copy(isLoading = false) }
-            
             result.onSuccess {
+                tokenManager.saveBiometricCredentials(current.email, current.masterPassword)
+                _uiState.update { it.copy(hasBiometricCredentials = true) }
                 onSuccess()
             }.onFailure { e ->
                 _uiState.update { it.copy(errorMessage = e.message ?: "No se pudo iniciar sesión. Inténtalo de nuevo.") }
@@ -77,11 +64,29 @@ class LoginViewModel(
     }
 
     /**
-     * Clears authentication data and resets UI state.
+     * Called by the screen after a successful biometric prompt on the login screen.
+     * Reads the saved credentials and logs in silently.
      */
+    fun onBiometricLoginSuccess(onSuccess: () -> Unit) {
+        val email = tokenManager.getBiometricEmail() ?: return
+        val password = tokenManager.getBiometricPassword() ?: return
+
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+        viewModelScope.launch {
+            val result = authRepository.login(email, password)
+            _uiState.update { it.copy(isLoading = false) }
+            result.onSuccess {
+                onSuccess()
+            }.onFailure { e ->
+                _uiState.update { it.copy(errorMessage = e.message ?: "No se pudo iniciar sesión. Inténtalo de nuevo.") }
+            }
+        }
+    }
+
     fun logout() {
         authRepository.logout()
-        _uiState.update { LoginUiState() }
+        _uiState.update { LoginUiState(hasBiometricCredentials = tokenManager.hasBiometricCredentials()) }
     }
 
     private companion object {

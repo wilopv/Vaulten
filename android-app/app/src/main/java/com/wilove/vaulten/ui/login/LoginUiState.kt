@@ -9,8 +9,9 @@ data class LoginUiState(
     val masterPassword: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val biometricEnabled: Boolean = true,
     val remainingAttempts: Int = 5,
     val maxAttempts: Int = 5,
-    val isLockedOut: Boolean = false
+    val isLockedOut: Boolean = false,
+    // True when there are saved credentials from a previous login — enables biometric shortcut
+    val hasBiometricCredentials: Boolean = false
 )
