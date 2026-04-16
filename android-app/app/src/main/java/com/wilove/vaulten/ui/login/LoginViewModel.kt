@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.login
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.data.local.TokenManager
 import com.wilove.vaulten.domain.repository.AuthRepository
@@ -10,7 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class LoginViewModel(
+@HiltViewModel
+class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {

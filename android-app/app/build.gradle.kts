@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,7 +7,16 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.secrets.gradle.plugin)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android.gradle.plugin)
 }
+
+
+// Load signing credentials from local.properties (never committed) or CI environment variables.
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
+}
+fun localProp(key: String): String? = localProps.getProperty(key) ?: System.getenv(key)
 
 android {
     namespace = "com.wilove.vaulten"
@@ -21,10 +32,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = localProp("VAULTEN_KEYSTORE_PATH")
+            val keystorePass = localProp("VAULTEN_KEYSTORE_PASSWORD")
+            val keyAlias    = localProp("VAULTEN_KEY_ALIAS")
+            val keyPass     = localProp("VAULTEN_KEY_PASSWORD")
+
+            if (keystorePath != null && keystorePass != null && keyAlias != null && keyPass != null) {
+                storeFile     = file(keystorePath)
+                storePassword = keystorePass
+                this.keyAlias = keyAlias
+                keyPassword   = keyPass
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -87,4 +115,9 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
 }

@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.lock
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.wilove.vaulten.data.local.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +13,8 @@ data class LockUiState(
     val errorMessage: String? = null
 )
 
-class LockViewModel(
+@HiltViewModel
+class LockViewModel @Inject constructor(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 

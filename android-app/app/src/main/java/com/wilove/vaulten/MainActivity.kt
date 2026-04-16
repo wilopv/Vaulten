@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.fragment.app.FragmentActivity
+import dagger.hilt.android.AndroidEntryPoint
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import com.wilove.vaulten.ui.theme.VaultenTheme
  * - [EXTRA_START_DESTINATION]: the route to open directly (login or credentials_list)
  * - [EXTRA_SEARCH_QUERY]: a pre-filled search term for the credentials list
  */
+@AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
     companion object {
