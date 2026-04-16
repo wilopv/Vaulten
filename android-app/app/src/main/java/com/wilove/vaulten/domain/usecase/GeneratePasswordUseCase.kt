@@ -3,7 +3,7 @@ package com.wilove.vaulten.domain.usecase
 /**
  * Use case to generate secure random passwords.
  */
-class GeneratePasswordUseCase {
+class GeneratePasswordUseCase @javax.inject.Inject constructor() {
     operator fun invoke(
         length: Int,
         useUppercase: Boolean,

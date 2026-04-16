@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.passwordgenerator
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +13,8 @@ import com.wilove.vaulten.domain.usecase.GeneratePasswordUseCase
  * ViewModel for the Password Generator screen.
  * Manages password generation and configuration.
  */
-class PasswordGeneratorViewModel(
+@HiltViewModel
+class PasswordGeneratorViewModel @Inject constructor(
     private val generatePasswordUseCase: GeneratePasswordUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PasswordGeneratorUiState())

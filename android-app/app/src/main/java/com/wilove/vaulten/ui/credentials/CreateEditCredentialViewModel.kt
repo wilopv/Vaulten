@@ -2,6 +2,8 @@ package com.wilove.vaulten.ui.credentials
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.wilove.vaulten.domain.model.Credential
 import com.wilove.vaulten.domain.usecase.CreateCredentialUseCase
 import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
@@ -16,10 +18,11 @@ import kotlinx.coroutines.launch
  * ViewModel for the Create/Edit Credential screen.
  * Manages credential creation and editing.
  */
-class CreateEditCredentialViewModel(
+@HiltViewModel
+class CreateEditCredentialViewModel @Inject constructor(
     private val createCredentialUseCase: CreateCredentialUseCase,
     private val updateCredentialUseCase: UpdateCredentialUseCase,
-    private val getCredentialByIdUseCase: GetCredentialByIdUseCase? = null
+    private val getCredentialByIdUseCase: GetCredentialByIdUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CreateEditCredentialUiState())
     val uiState: StateFlow<CreateEditCredentialUiState> = _uiState.asStateFlow()

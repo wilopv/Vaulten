@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.credentials
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.usecase.DeleteCredentialUseCase
 import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
@@ -17,7 +19,8 @@ import kotlinx.coroutines.launch
  * ViewModel for the Credential Detail screen.
  * Manages loading and displaying a single credential.
  */
-class CredentialDetailViewModel(
+@HiltViewModel
+class CredentialDetailViewModel @Inject constructor(
     private val getCredentialByIdUseCase: GetCredentialByIdUseCase,
     private val deleteCredentialUseCase: DeleteCredentialUseCase,
     private val getAllCredentialsUseCase: GetAllCredentialsUseCase,

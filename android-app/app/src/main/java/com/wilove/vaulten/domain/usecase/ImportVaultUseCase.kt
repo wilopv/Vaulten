@@ -2,11 +2,12 @@ package com.wilove.vaulten.domain.usecase
 
 import com.wilove.vaulten.data.export.ExportEntry
 import com.wilove.vaulten.data.export.VaultExportImportManager
+import javax.inject.Inject
 import com.wilove.vaulten.domain.model.Credential
 import com.wilove.vaulten.domain.repository.VaultRepository
 import kotlinx.coroutines.flow.first
 
-class ImportVaultUseCase(private val repository: VaultRepository) {
+class ImportVaultUseCase @Inject constructor(private val repository: VaultRepository) {
 
     data class ImportResult(val imported: Int, val skipped: Int)
 

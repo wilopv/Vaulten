@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.settings
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +23,8 @@ data class ChangePasswordUiState(
     val errorMessage: String? = null
 )
 
-class ChangePasswordViewModel(
+@HiltViewModel
+class ChangePasswordViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 

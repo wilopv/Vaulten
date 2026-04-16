@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.dashboard
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +16,8 @@ import kotlinx.coroutines.launch
  * ViewModel for the Dashboard.
  * Observes reactive dashboard data and handles background synchronization.
  */
-class DashboardViewModel(
+@HiltViewModel
+class DashboardViewModel @Inject constructor(
     private val getDashboardDataUseCase: GetDashboardDataUseCase
 ) : ViewModel() {
 

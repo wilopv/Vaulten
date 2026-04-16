@@ -4,68 +4,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.wilove.vaulten.data.repository.AuthRepositoryImpl
-import com.wilove.vaulten.data.repository.VaultRepositoryImpl
-import com.wilove.vaulten.di.NetworkModule
-import com.wilove.vaulten.domain.usecase.CreateCredentialUseCase
-import com.wilove.vaulten.domain.usecase.DeleteCredentialUseCase
-import com.wilove.vaulten.domain.usecase.GeneratePasswordUseCase
-import com.wilove.vaulten.domain.usecase.GetAllCredentialsUseCase
-import com.wilove.vaulten.domain.usecase.GetCredentialByIdUseCase
-import com.wilove.vaulten.domain.usecase.ExportVaultUseCase
-import com.wilove.vaulten.domain.usecase.GetDashboardDataUseCase
-import com.wilove.vaulten.domain.usecase.GetDeletedCredentialsUseCase
-import com.wilove.vaulten.domain.usecase.ImportVaultUseCase
-import com.wilove.vaulten.domain.usecase.PasswordHealthUseCase
-import com.wilove.vaulten.domain.usecase.PermanentlyDeleteCredentialUseCase
-import com.wilove.vaulten.domain.usecase.RestoreCredentialUseCase
-import com.wilove.vaulten.domain.usecase.UpdateCredentialUseCase
-import android.app.Application
+import com.wilove.vaulten.data.local.SessionManager
+import com.wilove.vaulten.data.local.TokenManager
 import com.wilove.vaulten.ui.credentials.AppPickerScreen
 import com.wilove.vaulten.ui.credentials.AppPickerViewModel
-import com.wilove.vaulten.ui.settings.ExportImportScreen
-import com.wilove.vaulten.ui.settings.ExportImportViewModel
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialScreen
 import com.wilove.vaulten.ui.credentials.CreateEditCredentialViewModel
 import com.wilove.vaulten.ui.credentials.CredentialDetailScreen
 import com.wilove.vaulten.ui.credentials.CredentialDetailViewModel
 import com.wilove.vaulten.ui.credentials.CredentialsListScreen
 import com.wilove.vaulten.ui.credentials.CredentialsListViewModel
-import com.wilove.vaulten.ui.trash.TrashScreen
-import com.wilove.vaulten.ui.trash.TrashViewModel
 import com.wilove.vaulten.ui.dashboard.DashboardScreen
 import com.wilove.vaulten.ui.dashboard.DashboardViewModel
-import androidx.room.Room
-import com.wilove.vaulten.data.local.VaultDatabase
-import com.wilove.vaulten.data.local.TokenManager
-import com.wilove.vaulten.data.local.SessionManager
 import com.wilove.vaulten.ui.lock.LockScreen
 import com.wilove.vaulten.ui.lock.LockViewModel
-import com.wilove.vaulten.ui.settings.ChangePasswordScreen
-import com.wilove.vaulten.ui.settings.ChangePasswordViewModel
-import com.wilove.vaulten.ui.settings.SettingsScreen
-import com.wilove.vaulten.ui.settings.SettingsViewModel
-import com.wilove.vaulten.ui.settings.SettingsViewModelFactory
 import com.wilove.vaulten.ui.login.LoginScreen
 import com.wilove.vaulten.ui.login.LoginViewModel
 import com.wilove.vaulten.ui.passwordgenerator.PasswordGeneratorScreen
 import com.wilove.vaulten.ui.passwordgenerator.PasswordGeneratorViewModel
+import com.wilove.vaulten.ui.settings.ChangePasswordScreen
+import com.wilove.vaulten.ui.settings.ChangePasswordViewModel
+import com.wilove.vaulten.ui.settings.ExportImportScreen
+import com.wilove.vaulten.ui.settings.ExportImportViewModel
+import com.wilove.vaulten.ui.settings.SettingsScreen
+import com.wilove.vaulten.ui.settings.SettingsViewModel
 import com.wilove.vaulten.ui.signup.SignupScreen
 import com.wilove.vaulten.ui.signup.SignupViewModel
+import com.wilove.vaulten.ui.trash.TrashScreen
+import com.wilove.vaulten.ui.trash.TrashViewModel
 
-
-/**
- * Main navigation graph for the Vaulten app.
- * Defines all navigation routes and their corresponding screens.
- *
- * @param navController The navigation controller for managing navigation
- * @param modifier Optional modifier for the NavHost
- * @param startDestination The initial destination when the app starts
- */
 @Composable
 fun VaultenNavGraph(
     navController: NavHostController,
@@ -73,60 +45,20 @@ fun VaultenNavGraph(
     startDestination: String = VaultenDestinations.LOGIN,
     initialSearchQuery: String? = null
 ) {
-    // Get context for TokenManager
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
-    // Create real repository and use case instances via manual DI
-    val tokenManager = androidx.compose.runtime.remember { NetworkModule.provideTokenManager(context) }
+    // TokenManager used only for start destination routing (read-only at startup)
+    val tokenManager = androidx.compose.runtime.remember { TokenManager(context) }
 
-    // Determine the effective start destination accounting for existing session and lock state.
     val effectiveStartDestination = androidx.compose.runtime.remember {
         when {
-            // Autofill or other external override takes priority
             startDestination != VaultenDestinations.LOGIN -> startDestination
-            // No token → show login
             tokenManager.getToken() == null -> VaultenDestinations.LOGIN
-            // Session timed out → LoginScreen (must re-authenticate with server)
             SessionManager.isLockRequired(tokenManager.getLastActiveTimestamp()) ->
                 VaultenDestinations.LOGIN
-            // Active session → always lock (biometric/device credential prompt)
             else -> VaultenDestinations.LOCK
         }
     }
-    val okHttpClient = androidx.compose.runtime.remember { NetworkModule.provideOkHttpClient(tokenManager) }
-    
-    val authRepository = androidx.compose.runtime.remember {
-        com.wilove.vaulten.data.repository.AuthRepositoryImpl(
-            NetworkModule.provideAuthApiService(okHttpClient),
-            tokenManager
-        )
-    }
-    
-    val vaultDatabase = androidx.compose.runtime.remember {
-        VaultDatabase.getInstance(context)
-    }
-    val vaultDao = androidx.compose.runtime.remember { vaultDatabase.vaultDao() }
-
-    val vaultRepository = androidx.compose.runtime.remember {
-        com.wilove.vaulten.data.repository.VaultRepositoryImpl(
-            NetworkModule.provideVaultApiService(okHttpClient),
-            vaultDao
-        )
-    }
-    
-    val getDashboardDataUseCase = androidx.compose.runtime.remember { GetDashboardDataUseCase(vaultRepository) }
-    val getAllCredentialsUseCase = androidx.compose.runtime.remember { GetAllCredentialsUseCase(vaultRepository) }
-    val getCredentialByIdUseCase = androidx.compose.runtime.remember { GetCredentialByIdUseCase(vaultRepository) }
-    val createCredentialUseCase = androidx.compose.runtime.remember { CreateCredentialUseCase(vaultRepository) }
-    val updateCredentialUseCase = androidx.compose.runtime.remember { UpdateCredentialUseCase(vaultRepository) }
-    val deleteCredentialUseCase = androidx.compose.runtime.remember { DeleteCredentialUseCase(vaultRepository) }
-    val passwordHealthUseCase = androidx.compose.runtime.remember { PasswordHealthUseCase() }
-    val generatePasswordUseCase = androidx.compose.runtime.remember { GeneratePasswordUseCase() }
-    val getDeletedCredentialsUseCase = androidx.compose.runtime.remember { GetDeletedCredentialsUseCase(vaultRepository) }
-    val restoreCredentialUseCase = androidx.compose.runtime.remember { RestoreCredentialUseCase(vaultRepository) }
-    val permanentlyDeleteCredentialUseCase = androidx.compose.runtime.remember { PermanentlyDeleteCredentialUseCase(vaultRepository) }
-    val exportVaultUseCase = androidx.compose.runtime.remember { ExportVaultUseCase(vaultRepository) }
-    val importVaultUseCase = androidx.compose.runtime.remember { ImportVaultUseCase(vaultRepository) }
 
     NavHost(
         navController = navController,
@@ -135,9 +67,7 @@ fun VaultenNavGraph(
     ) {
         // Login Screen
         composable(VaultenDestinations.LOGIN) {
-            val viewModel: LoginViewModel = viewModel(
-                factory = LoginViewModelFactory(authRepository, tokenManager)
-            )
+            val viewModel: LoginViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             val navigateToDashboard = {
@@ -158,9 +88,7 @@ fun VaultenNavGraph(
 
         // Signup Screen
         composable(VaultenDestinations.SIGNUP) {
-            val viewModel: SignupViewModel = viewModel(
-                factory = SignupViewModelFactory(authRepository)
-            )
+            val viewModel: SignupViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             SignupScreen(
@@ -171,23 +99,18 @@ fun VaultenNavGraph(
                 onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
                 onSignupClick = {
                     viewModel.onSignupClick {
-                        // Navigate to dashboard on successful signup
                         navController.navigate(VaultenDestinations.DASHBOARD) {
                             popUpTo(VaultenDestinations.LOGIN) { inclusive = true }
                         }
                     }
                 },
-                onLoginClick = {
-                    navController.popBackStack()
-                }
+                onLoginClick = { navController.popBackStack() }
             )
         }
 
         // Dashboard Screen
         composable(VaultenDestinations.DASHBOARD) {
-            val viewModel: DashboardViewModel = viewModel(
-                factory = DashboardViewModelFactory(getDashboardDataUseCase)
-            )
+            val viewModel: DashboardViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             DashboardScreen(
@@ -203,7 +126,6 @@ fun VaultenNavGraph(
                 },
                 onRefresh = viewModel::refreshDashboard,
                 onLogoutClick = {
-                    // Navigate to login and clear stack
                     navController.navigate(VaultenDestinations.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -216,9 +138,7 @@ fun VaultenNavGraph(
 
         // Settings Screen
         composable(VaultenDestinations.SETTINGS) {
-            val viewModel: SettingsViewModel = viewModel(
-                factory = SettingsViewModelFactory(context.applicationContext)
-            )
+            val viewModel: SettingsViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             SettingsScreen(
@@ -233,12 +153,9 @@ fun VaultenNavGraph(
 
         // Credentials List Screen
         composable(VaultenDestinations.CREDENTIALS_LIST) {
-            val viewModel: CredentialsListViewModel = viewModel(
-                factory = CredentialsListViewModelFactory(getAllCredentialsUseCase, passwordHealthUseCase)
-            )
+            val viewModel: CredentialsListViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
-            // Pre-fill the search box when launched from the autofill fallback
             androidx.compose.runtime.LaunchedEffect(initialSearchQuery) {
                 if (!initialSearchQuery.isNullOrEmpty()) {
                     viewModel.onSearchQueryChange(initialSearchQuery)
@@ -251,12 +168,8 @@ fun VaultenNavGraph(
                 onCredentialClick = { credentialId ->
                     navController.navigate(VaultenDestinations.credentialDetail(credentialId))
                 },
-                onAddCredentialClick = {
-                    navController.navigate(VaultenDestinations.ADD_CREDENTIAL)
-                },
-                onBackClick = {
-                    navController.popBackStack()
-                },
+                onAddCredentialClick = { navController.navigate(VaultenDestinations.ADD_CREDENTIAL) },
+                onBackClick = { navController.popBackStack() },
                 onRefresh = viewModel::refresh,
                 onTrashClick = { navController.navigate(VaultenDestinations.TRASH) },
                 onApplyFilter = viewModel::applyFilter,
@@ -267,79 +180,52 @@ fun VaultenNavGraph(
         // Credential Detail Screen
         composable(VaultenDestinations.CREDENTIAL_DETAIL) { backStackEntry ->
             val credentialId = backStackEntry.arguments?.getString("credentialId") ?: return@composable
-            val viewModel: CredentialDetailViewModel = viewModel(
-                factory = CredentialDetailViewModelFactory(getCredentialByIdUseCase, deleteCredentialUseCase, getAllCredentialsUseCase, passwordHealthUseCase)
-            )
+            val viewModel: CredentialDetailViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
             val navigateBack by viewModel.navigateBack.collectAsState()
 
-            // Load credential when screen is first shown
             androidx.compose.runtime.LaunchedEffect(credentialId) {
                 viewModel.loadCredential(credentialId)
             }
-
-            // Navigate back when delete is successful
             androidx.compose.runtime.LaunchedEffect(navigateBack) {
-                if (navigateBack) {
-                    navController.popBackStack()
-                }
+                if (navigateBack) navController.popBackStack()
             }
 
             CredentialDetailScreen(
                 uiState = uiState,
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onEditClick = {
-                    navController.navigate(VaultenDestinations.editCredential(credentialId))
-                },
-                onDeleteClick = {
-                    viewModel.deleteCredential(credentialId)
-                },
-                onCopyField = { fieldName, fieldValue ->
-                    // TODO: Implement copy to clipboard
-                    viewModel.markFieldAsCopied(fieldName)
-                },
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { navController.navigate(VaultenDestinations.editCredential(credentialId)) },
+                onDeleteClick = { viewModel.deleteCredential(credentialId) },
+                onCopyField = { fieldName, _ -> viewModel.markFieldAsCopied(fieldName) },
                 onTogglePasswordVisibility = viewModel::togglePasswordVisibility
             )
         }
 
         // Add Credential Screen
         composable(VaultenDestinations.ADD_CREDENTIAL) { backStackEntry ->
-            val viewModel: CreateEditCredentialViewModel = viewModel(
-                factory = CreateEditCredentialViewModelFactory(
-                    createCredentialUseCase,
-                    updateCredentialUseCase
-                )
-            )
+            val viewModel: CreateEditCredentialViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
-            // Check if a password was generated and use it
             val generatedPassword = backStackEntry
-                .savedStateHandle
-                .getStateFlow<String?>("generatedPassword", null)
+                .savedStateHandle.getStateFlow<String?>("generatedPassword", null)
                 .collectAsState()
 
             androidx.compose.runtime.LaunchedEffect(generatedPassword.value) {
                 generatedPassword.value?.let { password ->
                     viewModel.onPasswordChange(password)
-                    backStackEntry.savedStateHandle.set<String?>("generatedPassword", null)
+                    backStackEntry.savedStateHandle["generatedPassword"] = null
                 }
             }
 
-            // Check if an app was selected from the picker
             val selectedApp = backStackEntry
-                .savedStateHandle
-                .getStateFlow<String?>("selectedApp", null)
+                .savedStateHandle.getStateFlow<String?>("selectedApp", null)
                 .collectAsState()
 
             androidx.compose.runtime.LaunchedEffect(selectedApp.value) {
                 selectedApp.value?.let { value ->
                     val parts = value.split("|", limit = 2)
-                    if (parts.size == 2) {
-                        viewModel.onAndroidPackageNameChange(parts[0], parts[1])
-                    }
-                    backStackEntry.savedStateHandle.set<String?>("selectedApp", null)
+                    if (parts.size == 2) viewModel.onAndroidPackageNameChange(parts[0], parts[1])
+                    backStackEntry.savedStateHandle["selectedApp"] = null
                 }
             }
 
@@ -354,9 +240,7 @@ fun VaultenNavGraph(
                 onGeneratePasswordClick = {
                     navController.navigate(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL)
                 },
-                onSelectAppClick = {
-                    navController.navigate(VaultenDestinations.APP_PICKER)
-                },
+                onSelectAppClick = { navController.navigate(VaultenDestinations.APP_PICKER) },
                 onAndroidPackageNameChange = viewModel::onAndroidPackageNameChange
             )
         }
@@ -364,50 +248,34 @@ fun VaultenNavGraph(
         // Edit Credential Screen
         composable(VaultenDestinations.EDIT_CREDENTIAL) { backStackEntry ->
             val credentialId = backStackEntry.arguments?.getString("credentialId") ?: return@composable
-            val viewModel: CreateEditCredentialViewModel = viewModel(
-                factory = CreateEditCredentialViewModelFactory(
-                    createCredentialUseCase,
-                    updateCredentialUseCase,
-                    getCredentialByIdUseCase
-                )
-            )
+            val viewModel: CreateEditCredentialViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
-            // Load credential on first composition only
             androidx.compose.runtime.LaunchedEffect(Unit) {
                 viewModel.loadCredentialForEditing(credentialId)
             }
 
-            // Check if a password was generated and use it - this must run after loading
             val generatedPassword = backStackEntry
-                .savedStateHandle
-                .getStateFlow<String?>("generatedPassword", null)
+                .savedStateHandle.getStateFlow<String?>("generatedPassword", null)
                 .collectAsState()
 
-            // Apply generated password with a small delay to ensure it runs after loading
             androidx.compose.runtime.LaunchedEffect(generatedPassword.value) {
                 if (generatedPassword.value != null) {
-                    // Small delay to let the credential load first
                     kotlinx.coroutines.delay(50)
                     viewModel.onPasswordChange(generatedPassword.value!!)
-                    // Clear the saved state to avoid re-applying
-                    backStackEntry.savedStateHandle.set<String?>("generatedPassword", null)
+                    backStackEntry.savedStateHandle["generatedPassword"] = null
                 }
             }
 
-            // Check if an app was selected from the picker
             val selectedApp = backStackEntry
-                .savedStateHandle
-                .getStateFlow<String?>("selectedApp", null)
+                .savedStateHandle.getStateFlow<String?>("selectedApp", null)
                 .collectAsState()
 
             androidx.compose.runtime.LaunchedEffect(selectedApp.value) {
                 selectedApp.value?.let { value ->
                     val parts = value.split("|", limit = 2)
-                    if (parts.size == 2) {
-                        viewModel.onAndroidPackageNameChange(parts[0], parts[1])
-                    }
-                    backStackEntry.savedStateHandle.set<String?>("selectedApp", null)
+                    if (parts.size == 2) viewModel.onAndroidPackageNameChange(parts[0], parts[1])
+                    backStackEntry.savedStateHandle["selectedApp"] = null
                 }
             }
 
@@ -422,18 +290,14 @@ fun VaultenNavGraph(
                 onGeneratePasswordClick = {
                     navController.navigate(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL)
                 },
-                onSelectAppClick = {
-                    navController.navigate(VaultenDestinations.APP_PICKER)
-                },
+                onSelectAppClick = { navController.navigate(VaultenDestinations.APP_PICKER) },
                 onAndroidPackageNameChange = viewModel::onAndroidPackageNameChange
             )
         }
 
         // Password Generator Screen (standalone)
         composable(VaultenDestinations.PASSWORD_GENERATOR) {
-            val viewModel: PasswordGeneratorViewModel = viewModel(
-                factory = PasswordGeneratorViewModelFactory(generatePasswordUseCase)
-            )
+            val viewModel: PasswordGeneratorViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             PasswordGeneratorScreen(
@@ -445,13 +309,10 @@ fun VaultenNavGraph(
                 onNumbersToggle = viewModel::toggleNumbers,
                 onSymbolsToggle = viewModel::toggleSymbols,
                 onCopyClick = viewModel::markPasswordAsCopied,
-                onBackClick = {
-                    navController.popBackStack()
-                },
+                onBackClick = { navController.popBackStack() },
                 showUseButton = false
             )
 
-            // Clear copied feedback after 2 seconds
             if (uiState.copiedPassword) {
                 androidx.compose.runtime.LaunchedEffect(Unit) {
                     kotlinx.coroutines.delay(2000)
@@ -462,9 +323,7 @@ fun VaultenNavGraph(
 
         // Password Generator Screen (for credential form)
         composable(VaultenDestinations.PASSWORD_GENERATOR_FOR_CREDENTIAL) {
-            val viewModel: PasswordGeneratorViewModel = viewModel(
-                factory = PasswordGeneratorViewModelFactory(generatePasswordUseCase)
-            )
+            val viewModel: PasswordGeneratorViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             PasswordGeneratorScreen(
@@ -476,20 +335,16 @@ fun VaultenNavGraph(
                 onNumbersToggle = viewModel::toggleNumbers,
                 onSymbolsToggle = viewModel::toggleSymbols,
                 onCopyClick = viewModel::markPasswordAsCopied,
-                onBackClick = {
-                    navController.popBackStack()
-                },
+                onBackClick = { navController.popBackStack() },
                 onUsePasswordClick = {
                     navController.previousBackStackEntry?.savedStateHandle?.set(
-                        "generatedPassword",
-                        uiState.generatedPassword
+                        "generatedPassword", uiState.generatedPassword
                     )
                     navController.popBackStack()
                 },
                 showUseButton = true
             )
 
-            // Clear copied feedback after 2 seconds
             if (uiState.copiedPassword) {
                 androidx.compose.runtime.LaunchedEffect(Unit) {
                     kotlinx.coroutines.delay(2000)
@@ -500,9 +355,7 @@ fun VaultenNavGraph(
 
         // Change Password Screen
         composable(VaultenDestinations.CHANGE_PASSWORD) {
-            val viewModel: ChangePasswordViewModel = viewModel(
-                factory = ChangePasswordViewModelFactory(authRepository)
-            )
+            val viewModel: ChangePasswordViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             ChangePasswordScreen(
@@ -518,13 +371,7 @@ fun VaultenNavGraph(
 
         // Trash Screen
         composable(VaultenDestinations.TRASH) {
-            val viewModel: TrashViewModel = viewModel(
-                factory = TrashViewModelFactory(
-                    getDeletedCredentialsUseCase,
-                    restoreCredentialUseCase,
-                    permanentlyDeleteCredentialUseCase
-                )
-            )
+            val viewModel: TrashViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             TrashScreen(
@@ -537,9 +384,7 @@ fun VaultenNavGraph(
 
         // App Picker Screen
         composable(VaultenDestinations.APP_PICKER) {
-            val viewModel: AppPickerViewModel = viewModel(
-                factory = AppPickerViewModelFactory(context.applicationContext as Application)
-            )
+            val viewModel: AppPickerViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             AppPickerScreen(
@@ -547,8 +392,7 @@ fun VaultenNavGraph(
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onAppSelected = { packageName, appLabel ->
                     navController.previousBackStackEntry?.savedStateHandle?.set(
-                        "selectedApp",
-                        "$packageName|$appLabel"
+                        "selectedApp", "$packageName|$appLabel"
                     )
                     navController.popBackStack()
                 },
@@ -558,9 +402,7 @@ fun VaultenNavGraph(
 
         // Export / Import Screen
         composable(VaultenDestinations.EXPORT_IMPORT) {
-            val viewModel: ExportImportViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
-                factory = ExportImportViewModelFactory(exportVaultUseCase, importVaultUseCase)
-            )
+            val viewModel: ExportImportViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             ExportImportScreen(
@@ -579,11 +421,9 @@ fun VaultenNavGraph(
             )
         }
 
-        // Lock Screen — shown when the session has timed out
+        // Lock Screen
         composable(VaultenDestinations.LOCK) {
-            val viewModel: LockViewModel = viewModel(
-                factory = LockViewModelFactory(tokenManager)
-            )
+            val viewModel: LockViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
             LockScreen(

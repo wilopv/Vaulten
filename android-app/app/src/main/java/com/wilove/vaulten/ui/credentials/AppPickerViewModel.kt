@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.lifecycle.AndroidViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +26,8 @@ data class AppPickerUiState(
     val isLoading: Boolean = true
 )
 
-class AppPickerViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class AppPickerViewModel @Inject constructor(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(AppPickerUiState())
     val uiState: StateFlow<AppPickerUiState> = _uiState.asStateFlow()

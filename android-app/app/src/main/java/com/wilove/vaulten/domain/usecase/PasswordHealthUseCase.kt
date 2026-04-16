@@ -3,12 +3,13 @@ package com.wilove.vaulten.domain.usecase
 import com.wilove.vaulten.domain.model.Credential
 import com.wilove.vaulten.domain.model.PasswordHealthStatus
 import com.wilove.vaulten.domain.model.PasswordWeakness
+import javax.inject.Inject
 
 /**
  * Analyzes the health of passwords across a list of credentials.
  * Does not access the repository; receives the list already loaded.
  */
-class PasswordHealthUseCase {
+class PasswordHealthUseCase @Inject constructor() {
     operator fun invoke(credentials: List<Credential>): Map<String, PasswordHealthStatus> {
         val countByPassword = credentials.groupingBy { it.password }.eachCount()
         return credentials.associate { credential ->

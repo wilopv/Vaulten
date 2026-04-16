@@ -7,6 +7,7 @@ import com.wilove.vaulten.data.remote.model.RegisterRequest
 import com.wilove.vaulten.data.local.TokenManager
 import com.wilove.vaulten.domain.repository.AuthRepository
 import java.io.IOException
+import javax.inject.Inject
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -15,7 +16,7 @@ import java.net.UnknownHostException
  * Repository handling authentication logic and token lifecycle.
  * Implements the domain [AuthRepository] interface.
  */
-class AuthRepositoryImpl(
+class AuthRepositoryImpl @Inject constructor(
     private val authApiService: AuthApiService,
     private val tokenManager: TokenManager
 ) : AuthRepository {

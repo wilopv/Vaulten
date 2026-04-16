@@ -1,5 +1,6 @@
 package com.wilove.vaulten.domain.usecase
 
+import javax.inject.Inject
 import com.wilove.vaulten.domain.model.DashboardData
 import com.wilove.vaulten.domain.repository.VaultRepository
 import kotlinx.coroutines.flow.Flow
@@ -8,7 +9,7 @@ import kotlinx.coroutines.flow.combine
 /**
  * Use case for retrieving dashboard data as a reactive stream.
  */
-class GetDashboardDataUseCase(
+class GetDashboardDataUseCase @Inject constructor(
     private val repository: VaultRepository
 ) {
     /**

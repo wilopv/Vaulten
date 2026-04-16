@@ -18,11 +18,12 @@ import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import javax.inject.Inject
 
 /**
  * Repository responsible for managing vault entries and synchronization.
  */
-class VaultRepositoryImpl(
+class VaultRepositoryImpl @Inject constructor(
     private val apiService: VaultApiService,
     private val vaultDao: VaultDao
 ) : VaultRepository {

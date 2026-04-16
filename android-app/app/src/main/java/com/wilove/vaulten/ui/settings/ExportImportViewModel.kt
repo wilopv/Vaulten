@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.settings
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.usecase.ExportVaultUseCase
 import com.wilove.vaulten.domain.usecase.ImportVaultUseCase
@@ -24,7 +26,8 @@ data class ExportImportUiState(
     val errorMessage: String? = null
 )
 
-class ExportImportViewModel(
+@HiltViewModel
+class ExportImportViewModel @Inject constructor(
     private val exportVaultUseCase: ExportVaultUseCase,
     private val importVaultUseCase: ImportVaultUseCase
 ) : ViewModel() {

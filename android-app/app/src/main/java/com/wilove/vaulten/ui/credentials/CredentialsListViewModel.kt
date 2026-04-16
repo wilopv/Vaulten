@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.credentials
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.model.Credential
 import com.wilove.vaulten.domain.model.CredentialFilter
@@ -18,7 +20,8 @@ import kotlinx.coroutines.launch
  * ViewModel for the Credentials List screen.
  * Observes credentials from local storage and handles search filtering.
  */
-class CredentialsListViewModel(
+@HiltViewModel
+class CredentialsListViewModel @Inject constructor(
     private val getAllCredentialsUseCase: GetAllCredentialsUseCase,
     private val passwordHealthUseCase: PasswordHealthUseCase
 ) : ViewModel() {

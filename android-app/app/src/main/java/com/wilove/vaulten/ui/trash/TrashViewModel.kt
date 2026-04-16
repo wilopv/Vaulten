@@ -1,6 +1,8 @@
 package com.wilove.vaulten.ui.trash
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import com.wilove.vaulten.domain.model.Credential
 import com.wilove.vaulten.domain.usecase.GetDeletedCredentialsUseCase
@@ -19,7 +21,8 @@ data class TrashUiState(
     val errorMessage: String? = null
 )
 
-class TrashViewModel(
+@HiltViewModel
+class TrashViewModel @Inject constructor(
     private val getDeletedCredentialsUseCase: GetDeletedCredentialsUseCase,
     private val restoreCredentialUseCase: RestoreCredentialUseCase,
     private val permanentlyDeleteCredentialUseCase: PermanentlyDeleteCredentialUseCase
