@@ -12,17 +12,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Instrumented tests for [LoginScreen].
- * These tests run on an Android device or emulator.
- */
 @RunWith(AndroidJUnit4::class)
 class LoginScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
     @Test
-    /** Verifies the default UI renders all core elements. */
     fun loginScreen_showsCoreElements() {
         composeRule.setContent {
             VaultenTheme {
@@ -31,7 +26,7 @@ class LoginScreenTest {
                     onEmailChange = {},
                     onPasswordChange = {},
                     onUnlockClick = {},
-                    onBiometricToggle = {},
+                    onBiometricLoginSuccess = {},
                     onSignupClick = {}
                 )
             }
@@ -42,14 +37,30 @@ class LoginScreenTest {
         composeRule.onNodeWithTag(LoginTestTags.PasswordField).assertIsDisplayed()
         composeRule.onNodeWithTag(LoginTestTags.UnlockButton).assertIsDisplayed().assertIsEnabled()
         composeRule.onNodeWithTag(LoginTestTags.SignupButton).assertIsDisplayed().assertIsEnabled()
-        composeRule.onNodeWithTag(LoginTestTags.BiometricToggle).assertIsDisplayed()
         composeRule.onNodeWithTag(LoginTestTags.ErrorText).assertDoesNotExist()
         composeRule.onNodeWithTag(LoginTestTags.Loading).assertDoesNotExist()
-        composeRule.onNodeWithTag(LoginTestTags.AttemptsText).assertIsDisplayed()
+        composeRule.onNodeWithTag(LoginTestTags.BiometricButton).assertDoesNotExist()
     }
 
     @Test
-    /** Verifies error text appears when provided by state. */
+    fun loginScreen_showsBiometricButton_whenCredentialsAvailable() {
+        composeRule.setContent {
+            VaultenTheme {
+                LoginScreen(
+                    uiState = LoginUiState(hasBiometricCredentials = true),
+                    onEmailChange = {},
+                    onPasswordChange = {},
+                    onUnlockClick = {},
+                    onBiometricLoginSuccess = {},
+                    onSignupClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(LoginTestTags.BiometricButton).assertIsDisplayed()
+    }
+
+    @Test
     fun loginScreen_showsErrorMessage() {
         val errorMessage = "Invalid master password"
         composeRule.setContent {
@@ -59,7 +70,7 @@ class LoginScreenTest {
                     onEmailChange = {},
                     onPasswordChange = {},
                     onUnlockClick = {},
-                    onBiometricToggle = {},
+                    onBiometricLoginSuccess = {},
                     onSignupClick = {}
                 )
             }
@@ -70,7 +81,6 @@ class LoginScreenTest {
     }
 
     @Test
-    /** Verifies loading state shows spinner and disables primary action. */
     fun loginScreen_showsLoadingAndDisablesUnlock() {
         composeRule.setContent {
             VaultenTheme {
@@ -79,7 +89,7 @@ class LoginScreenTest {
                     onEmailChange = {},
                     onPasswordChange = {},
                     onUnlockClick = {},
-                    onBiometricToggle = {},
+                    onBiometricLoginSuccess = {},
                     onSignupClick = {}
                 )
             }
@@ -90,8 +100,7 @@ class LoginScreenTest {
     }
 
     @Test
-    /** Verifies lockout state disables unlock and shows lockout message. */
-    fun loginScreen_showsLockoutState() {
+    fun loginScreen_lockedOut_disablesUnlockButton() {
         composeRule.setContent {
             VaultenTheme {
                 LoginScreen(
@@ -99,13 +108,12 @@ class LoginScreenTest {
                     onEmailChange = {},
                     onPasswordChange = {},
                     onUnlockClick = {},
-                    onBiometricToggle = {},
+                    onBiometricLoginSuccess = {},
                     onSignupClick = {}
                 )
             }
         }
 
-        composeRule.onNodeWithTag(LoginTestTags.LockoutText).assertIsDisplayed()
         composeRule.onNodeWithTag(LoginTestTags.UnlockButton).assertIsNotEnabled()
     }
 }

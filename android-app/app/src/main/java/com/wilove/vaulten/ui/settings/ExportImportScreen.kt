@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -181,7 +182,7 @@ fun ExportImportScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.testTag(ExportImportTestTags.Loading))
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Procesando…", style = MaterialTheme.typography.bodyMedium)
             }
@@ -217,7 +218,9 @@ fun ExportImportScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedButton(
                         onClick = onExportCsvClick,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(ExportImportTestTags.ExportCsvButton)
                     ) {
                         Text("Exportar CSV")
                     }
@@ -238,7 +241,9 @@ fun ExportImportScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = onRequestEncryptedExportClick,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(ExportImportTestTags.ExportJsonButton)
                     ) {
                         Text("Exportar JSON cifrado")
                     }
@@ -266,7 +271,9 @@ fun ExportImportScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = { importLauncher.launch(arrayOf("*/*")) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(ExportImportTestTags.ImportButton),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.secondary
                         )

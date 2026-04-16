@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.wilove.vaulten.domain.model.AlertSeverity
@@ -91,7 +92,7 @@ fun DashboardScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(modifier = Modifier.testTag(DashboardTestTags.Loading))
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Loading dashboard...")
                     }
@@ -106,10 +107,14 @@ fun DashboardScreen(
                         Text(
                             text = uiState.errorMessage,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.testTag(DashboardTestTags.ErrorText)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onRefresh) {
+                        Button(
+                            onClick = onRefresh,
+                            modifier = Modifier.testTag(DashboardTestTags.RetryButton)
+                        ) {
                             Text("Retry")
                         }
                     }
@@ -120,7 +125,8 @@ fun DashboardScreen(
                         dashboardData = uiState.dashboardData,
                         onCredentialClick = onCredentialClick,
                         onAddCredentialClick = onAddCredentialClick,
-                        onViewAllClick = onViewAllClick
+                        onViewAllClick = onViewAllClick,
+                        modifier = Modifier.testTag(DashboardTestTags.Content)
                     )
                 }
             }
@@ -133,10 +139,11 @@ private fun DashboardContent(
     dashboardData: DashboardData,
     onCredentialClick: (String) -> Unit,
     onAddCredentialClick: () -> Unit,
-    onViewAllClick: () -> Unit
+    onViewAllClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -154,7 +161,8 @@ private fun DashboardContent(
                     Text(
                         text = "${dashboardData.totalCredentials}",
                         style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.testTag(DashboardTestTags.TotalCredentials)
                     )
                 }
             }

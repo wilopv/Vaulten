@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -153,7 +154,9 @@ fun SettingsScreen(
 
                     Button(
                         onClick = { showGuide = true },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(SettingsTestTags.AutofillButton)
                     ) {
                         Text("Open Autofill Settings")
                     }
@@ -184,7 +187,9 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = onChangePasswordClick,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(SettingsTestTags.ChangePasswordButton)
                     ) {
                         Text("Cambiar contraseña")
                     }
@@ -216,7 +221,9 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = onExportImportClick,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(SettingsTestTags.ExportImportButton)
                     ) {
                         Text("Exportar / Importar")
                     }

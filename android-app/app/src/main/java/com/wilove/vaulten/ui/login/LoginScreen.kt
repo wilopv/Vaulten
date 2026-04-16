@@ -197,7 +197,9 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedButton(
                 onClick = { biometricTrigger++ },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(LoginTestTags.BiometricButton)
             ) {
                 Icon(
                     imageVector = Icons.Default.Fingerprint,

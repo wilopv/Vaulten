@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.wilove.vaulten.domain.model.Credential
 import java.text.SimpleDateFormat
@@ -100,7 +101,7 @@ fun TrashScreen(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(modifier = Modifier.testTag(TrashTestTags.Loading))
                     }
                 }
 
@@ -113,7 +114,8 @@ fun TrashScreen(
                         Text(
                             text = uiState.errorMessage,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.testTag(TrashTestTags.ErrorText)
                         )
                     }
                 }
@@ -127,13 +129,17 @@ fun TrashScreen(
                         Text(
                             text = "La papelera está vacía",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag(TrashTestTags.EmptyText)
                         )
                     }
                 }
 
                 else -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyColumn(
+                        modifier = Modifier.testTag(TrashTestTags.List),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         items(uiState.credentials) { credential ->
                             TrashCredentialRow(
                                 credential = credential,

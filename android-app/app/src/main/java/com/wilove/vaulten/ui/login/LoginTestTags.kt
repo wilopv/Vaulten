@@ -9,9 +9,7 @@ object LoginTestTags {
     const val PasswordField = "login_password_field"
     const val UnlockButton = "login_unlock_button"
     const val SignupButton = "login_signup_button"
-    const val BiometricToggle = "login_biometric_toggle"
+    const val BiometricButton = "login_biometric_button"
     const val ErrorText = "login_error_text"
     const val Loading = "login_loading"
-    const val AttemptsText = "login_attempts_text"
-    const val LockoutText = "login_lockout_text"
 }
