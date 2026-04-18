@@ -1,5 +1,6 @@
 package com.wilove.vaulten.ui.login
 
+import com.wilove.vaulten.data.local.TokenManager
 import com.wilove.vaulten.domain.repository.AuthRepository
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -22,13 +23,15 @@ class LoginViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var authRepository: AuthRepository
+    private lateinit var tokenManager: TokenManager
     private lateinit var viewModel: LoginViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         authRepository = mockk()
-        viewModel = LoginViewModel(authRepository)
+        tokenManager = mockk(relaxed = true)
+        viewModel = LoginViewModel(authRepository, tokenManager)
     }
 
     @After
@@ -44,7 +47,7 @@ class LoginViewModelTest {
         viewModel.onUnlockClick { successCalled = true }
 
         assertFalse(successCalled)
-        assertEquals("Email is required.", viewModel.uiState.value.errorMessage)
+        assertEquals("El email es obligatorio.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -55,7 +58,7 @@ class LoginViewModelTest {
         viewModel.onUnlockClick { successCalled = true }
 
         assertFalse(successCalled)
-        assertEquals("Enter a valid email address.", viewModel.uiState.value.errorMessage)
+        assertEquals("Introduce un email válido.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -67,7 +70,7 @@ class LoginViewModelTest {
         viewModel.onUnlockClick { successCalled = true }
 
         assertFalse(successCalled)
-        assertEquals("Master password is required.", viewModel.uiState.value.errorMessage)
+        assertEquals("La contraseña es obligatoria.", viewModel.uiState.value.errorMessage)
     }
 
     @Test

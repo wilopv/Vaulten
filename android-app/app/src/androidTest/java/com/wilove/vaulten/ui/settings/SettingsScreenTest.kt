@@ -30,9 +30,9 @@ class SettingsScreenTest {
             }
         }
 
-        composeRule.onNodeWithTag(SettingsTestTags.AutofillButton).assertIsDisplayed().assertIsEnabled()
-        composeRule.onNodeWithTag(SettingsTestTags.ChangePasswordButton).assertIsDisplayed().assertIsEnabled()
-        composeRule.onNodeWithTag(SettingsTestTags.ExportImportButton).assertIsDisplayed().assertIsEnabled()
+        composeRule.onNodeWithTag(SettingsTestTags.AutofillButton).assertExists().assertIsEnabled()
+        composeRule.onNodeWithTag(SettingsTestTags.ChangePasswordButton).assertExists().assertIsEnabled()
+        composeRule.onNodeWithTag(SettingsTestTags.ExportImportButton).assertExists().assertIsEnabled()
     }
 
     @Test

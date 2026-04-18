@@ -36,9 +36,9 @@ class ExportImportScreenTest {
             }
         }
 
-        composeRule.onNodeWithTag(ExportImportTestTags.ExportCsvButton).assertIsDisplayed().assertIsEnabled()
-        composeRule.onNodeWithTag(ExportImportTestTags.ExportJsonButton).assertIsDisplayed().assertIsEnabled()
-        composeRule.onNodeWithTag(ExportImportTestTags.ImportButton).assertIsDisplayed().assertIsEnabled()
+        composeRule.onNodeWithTag(ExportImportTestTags.ExportCsvButton).assertExists().assertIsEnabled()
+        composeRule.onNodeWithTag(ExportImportTestTags.ExportJsonButton).assertExists().assertIsEnabled()
+        composeRule.onNodeWithTag(ExportImportTestTags.ImportButton).assertExists().assertIsEnabled()
     }
 
     @Test

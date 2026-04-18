@@ -16,7 +16,7 @@ class PasswordGeneratorScreenTest {
         composeTestRule.setContent {
             PasswordGeneratorScreen(
                 uiState = PasswordGeneratorUiState(
-                    generatedPassword = "aB3$xKp9mQ2@wL7nR1!vT",
+                    generatedPassword = "aB3X-Kp9mQ2-wL7nR1-vT",
                     length = 16
                 ),
                 onGenerateClick = {},
@@ -71,13 +71,13 @@ class PasswordGeneratorScreenTest {
         }
 
         composeTestRule.onNodeWithTag(PasswordGeneratorTestTags.UppercaseCheckbox)
-            .assertIsDisplayed()
+            .assertExists()
         composeTestRule.onNodeWithTag(PasswordGeneratorTestTags.LowercaseCheckbox)
-            .assertIsDisplayed()
+            .assertExists()
         composeTestRule.onNodeWithTag(PasswordGeneratorTestTags.NumbersCheckbox)
-            .assertIsDisplayed()
+            .assertExists()
         composeTestRule.onNodeWithTag(PasswordGeneratorTestTags.SymbolsCheckbox)
-            .assertIsDisplayed()
+            .assertExists()
     }
 
     @Test

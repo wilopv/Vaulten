@@ -11,10 +11,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Instrumented tests for [CredentialsListScreen].
- * These tests run on an Android device or emulator.
- */
 @RunWith(AndroidJUnit4::class)
 class CredentialsListScreenTest {
     @get:Rule
@@ -32,6 +28,7 @@ class CredentialsListScreenTest {
                     onSearchQueryChange = {},
                     onCredentialClick = {},
                     onAddCredentialClick = {},
+                    onBackClick = {},
                     onRefresh = {}
                 )
             }
@@ -52,6 +49,7 @@ class CredentialsListScreenTest {
                     onSearchQueryChange = {},
                     onCredentialClick = {},
                     onAddCredentialClick = {},
+                    onBackClick = {},
                     onRefresh = {}
                 )
             }
@@ -69,6 +67,7 @@ class CredentialsListScreenTest {
                     onSearchQueryChange = {},
                     onCredentialClick = {},
                     onAddCredentialClick = {},
+                    onBackClick = {},
                     onRefresh = {}
                 )
             }
@@ -87,6 +86,7 @@ class CredentialsListScreenTest {
                     onSearchQueryChange = {},
                     onCredentialClick = {},
                     onAddCredentialClick = {},
+                    onBackClick = {},
                     onRefresh = {}
                 )
             }

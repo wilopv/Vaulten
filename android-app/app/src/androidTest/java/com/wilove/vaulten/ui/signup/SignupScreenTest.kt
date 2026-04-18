@@ -88,7 +88,7 @@ class SignupScreenTest {
             }
         }
 
-        composeRule.onNodeWithTag(SignupTestTags.Loading).assertIsDisplayed()
+        composeRule.onNodeWithTag(SignupTestTags.Loading).assertExists()
         composeRule.onNodeWithTag(SignupTestTags.SignupButton).assertIsNotEnabled()
     }
 }

@@ -44,7 +44,7 @@ class SignupViewModelTest {
         viewModel.onSignupClick { successCalled = true }
 
         assertFalse(successCalled)
-        assertEquals("Full name is required.", viewModel.uiState.value.errorMessage)
+        assertEquals("El nombre es obligatorio.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -56,7 +56,7 @@ class SignupViewModelTest {
         viewModel.onSignupClick { successCalled = true }
 
         assertFalse(successCalled)
-        assertEquals("Email is required.", viewModel.uiState.value.errorMessage)
+        assertEquals("El email es obligatorio.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -68,7 +68,7 @@ class SignupViewModelTest {
         viewModel.onSignupClick { successCalled = true }
 
         assertFalse(successCalled)
-        assertEquals("Enter a valid email address.", viewModel.uiState.value.errorMessage)
+        assertEquals("Introduce un email válido.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -82,7 +82,7 @@ class SignupViewModelTest {
         viewModel.onSignupClick { successCalled = true }
 
         assertFalse(successCalled)
-        assertEquals("Passwords do not match.", viewModel.uiState.value.errorMessage)
+        assertEquals("Las contraseñas no coinciden.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -119,7 +119,7 @@ class SignupViewModelTest {
         
         coEvery { authRepository.logout() } returns Unit
         coEvery { authRepository.register(any(), any(), any()) } returns Result.success(Unit)
-        coEvery { authRepository.login(any(), any()) } returns Result.failure(Exception("Login service unavailable"))
+        coEvery { authRepository.login(any(), any()) } returns Result.failure(Exception())
         
         var successCalled = false
         viewModel.onSignupClick { successCalled = true }
@@ -128,6 +128,6 @@ class SignupViewModelTest {
 
         assertFalse(successCalled)
         assertFalse(viewModel.uiState.value.isLoading)
-        assertTrue(viewModel.uiState.value.errorMessage!!.contains("automatic login failed"))
+        assertTrue(viewModel.uiState.value.errorMessage!!.contains("automáticamente"))
     }
 }
