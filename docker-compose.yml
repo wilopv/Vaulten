@@ -2,13 +2,14 @@ services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
-      SA_PASSWORD: ${SQL_SA_PASSWORD}
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD}
       ACCEPT_EULA: "Y"
       MSSQL_PID: Express
     ports:
       - "1433:1433"
     volumes:
       - sqldata:/var/lib/mssql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$SQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
       interval: 15s
