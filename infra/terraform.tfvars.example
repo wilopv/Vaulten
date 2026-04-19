@@ -1,0 +1,7 @@
+# Copiar a terraform.tfvars y rellenar los valores reales (NO commitear terraform.tfvars)
+location             = "westeurope"
+app_name             = "vaulten"
+sql_admin_login      = "vaultenadmin"
+sql_admin_password   = "TU_PASSWORD_SEGURA_1!"
+jwt_secret           = "GENERAR_CON: openssl rand -base64 64"
+vault_encryption_key = "GENERAR_CON: openssl rand -base64 32"
