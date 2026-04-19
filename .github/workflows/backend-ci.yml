@@ -26,6 +26,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+        working-directory: vaulten-backend
+
       - name: Run tests
         run: ./mvnw test
         working-directory: vaulten-backend
@@ -34,7 +38,7 @@ jobs:
     name: Build Image & Deploy
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.AZURE_DEPLOY == 'true'
     steps:
       - uses: actions/checkout@v4
 

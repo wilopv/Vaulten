@@ -30,6 +30,10 @@ jobs:
         run: chmod +x gradlew
         working-directory: android-app
 
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+        working-directory: android-app
+
       - name: Run unit tests
         run: ./gradlew :app:test
         working-directory: android-app
