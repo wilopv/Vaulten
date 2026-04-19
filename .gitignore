@@ -40,3 +40,11 @@ Thumbs.db
 
 # Docker local env
 .env
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/terraform.tfvars
+infra/override.tf
+infra/override.tf.json
