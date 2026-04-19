@@ -41,6 +41,10 @@ resource "azurerm_container_app" "main" {
     name  = "sql-password"
     value = var.sql_admin_password
   }
+  secret {
+    name  = "sql-username"
+    value = var.sql_admin_login
+  }
 
   template {
     min_replicas = 0
@@ -61,8 +65,8 @@ resource "azurerm_container_app" "main" {
         value = "jdbc:sqlserver://${azurerm_mssql_server.main.fully_qualified_domain_name}:1433;database=vaulten;encrypt=true;trustServerCertificate=false"
       }
       env {
-        name  = "SPRING_DATASOURCE_USERNAME"
-        value = var.sql_admin_login
+        name        = "SPRING_DATASOURCE_USERNAME"
+        secret_name = "sql-username"
       }
       env {
         name        = "SPRING_DATASOURCE_PASSWORD"
@@ -77,6 +81,10 @@ resource "azurerm_container_app" "main" {
         secret_name = "vault-encryption-key"
       }
     }
+  }
+
+  lifecycle {
+    ignore_changes = [template]
   }
 
   ingress {

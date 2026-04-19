@@ -5,6 +5,7 @@ resource "azurerm_mssql_server" "main" {
   version                      = "12.0"
   administrator_login          = var.sql_admin_login
   administrator_login_password = var.sql_admin_password
+  minimum_tls_version          = "1.2"
 }
 
 resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
@@ -20,5 +21,5 @@ resource "azurerm_mssql_database" "main" {
   sku_name                    = "GP_S_Gen5_1"
   min_capacity                = 0.5
   auto_pause_delay_in_minutes = 60
-  max_size_gb                 = 32
+  max_size_gb                 = 4
 }

@@ -27,7 +27,7 @@ output "resource_group_name" {
 
 output "container_app_url" {
   description = "URL pública de la API"
-  value       = "https://${azurerm_container_app.main.ingress[0].fqdn}"
+  value       = "https://${azurerm_container_app.main.ingress.fqdn}"
 }
 
 output "sql_server_fqdn" {
